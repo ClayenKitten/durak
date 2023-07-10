@@ -1,11 +1,9 @@
-use std::{default, f32::consts::FRAC_PI_2};
+use std::f32::consts::FRAC_PI_2;
 
 use bevy::{
-    app::{AppExit, ScheduleRunnerPlugin},
     prelude::*,
-    utils::Duration,
 };
-use rand::{random, seq::SliceRandom, thread_rng};
+use rand::seq::SliceRandom;
 use strum::{EnumIter, IntoEnumIterator};
 
 // Each player also has a score. This component holds on to that score
@@ -130,8 +128,6 @@ fn startup(
     state.0 = Some(GameScreen::Round);
 }
 
-const CARD_BACK_SPRITE_ID: usize = 27;
-
 fn spawn_deck(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -140,11 +136,11 @@ fn spawn_deck(
 ) {
     let texture_handle = asset_server.load("cards.png");
     let texture_atlas =
-        TextureAtlas::from_grid(texture_handle, Vec2::new(42.0, 60.0), 14, 4, None, None);
+        TextureAtlas::from_grid(texture_handle, Vec2::new(Card::PIXEL_WIDTH, Card::PIXEL_HEIGHT), 14, 4, None, None);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
     let deck_position = Vec3 {
-        x: camera.single().area.min.x + 42. * 1.5,
+        x: camera.single().area.min.x + Card::WIDTH / 2. + 16.,
         z: 1.,
         ..default()
     };
@@ -157,11 +153,11 @@ fn spawn_deck(
                 rank,
                 SpriteSheetBundle {
                     texture_atlas: texture_atlas_handle.clone(),
-                    sprite: TextureAtlasSprite::new(CARD_BACK_SPRITE_ID),
+                    sprite: TextureAtlasSprite::new(Card::BACK_SPRITE_ID),
                     transform: Transform {
                         translation: deck_position,
                         rotation: Quat::default(),
-                        scale: Vec3::splat(3.),
+                        scale: Vec3::splat(Card::SCALE),
                     },
                     ..default()
                 },
@@ -183,7 +179,7 @@ fn shuffle_deck(mut deck: Query<&mut Deck, Added<Deck>>) {
 fn pick_trump(
     mut commands: Commands,
     mut deck: Query<&mut Deck, Added<Deck>>,
-    mut card: Query<(&mut Transform, &CardSuit)>
+    mut card: Query<(&mut Transform, &CardSuit)>,
 ) {
     if deck.is_empty() {
         return;
@@ -194,7 +190,7 @@ fn pick_trump(
     let (mut trump_transform, trump_suit) = card.get_mut(trump_card)
         .expect("trump card should have transform and suit");
     trump_transform.rotate_z(FRAC_PI_2);
-    trump_transform.translation.x += 9. * 3. + 12. * 3.;
+    trump_transform.translation.x += (Card::HEIGHT - Card::WIDTH) / 2.;
     commands.entity(trump_card)
         .insert(Uncovered);
 }
@@ -257,24 +253,22 @@ fn display_hand(
     hands: Query<(&Player, &Hand), Changed<Hand>>,
     camera: Query<&OrthographicProjection>,
 ) {
-    const CARD_HEIGHT: f32 = 60. * 3.;
-    const CARD_WIDTH: f32 = 42. * 3.;
-    const HORIZONTAL_GAP: f32 = 30.;
+    const HORIZONTAL_GAP: f32 = 10.;
 
     for (player, hand) in hands.iter() {
         let area = camera.single().area;
         let y = match player.is_controlled {
-            true => area.min.y + CARD_HEIGHT / 2. - CARD_HEIGHT / 3.,
-            false => area.max.y - CARD_HEIGHT / 2. + CARD_HEIGHT / 3.,
+            true => area.min.y + Card::HEIGHT / 2. - Card::HEIGHT / 3.,
+            false => area.max.y - Card::HEIGHT / 2. + Card::HEIGHT / 3.,
         };
         let max_offset = {
             let number_of_cards = (hand.0.len() - 1) as f32;
-            number_of_cards * CARD_WIDTH + number_of_cards * HORIZONTAL_GAP
+            number_of_cards * Card::WIDTH + number_of_cards * HORIZONTAL_GAP
         };
         for (number, entity) in hand.0.iter().enumerate() {
             let x = {
                 let number = number as f32;
-                let offset = number * CARD_WIDTH + number * HORIZONTAL_GAP;
+                let offset = number * Card::WIDTH + number * HORIZONTAL_GAP;
                 offset - max_offset / 2.
             };
             let mut card_transform = cards.get_mut(*entity)
@@ -286,6 +280,21 @@ fn display_hand(
             }
         }
     }
+}
+
+/// Set of constants associated with cards.
+struct Card;
+
+impl Card {
+    pub const PIXEL_WIDTH: f32 = 42.;
+    pub const PIXEL_HEIGHT: f32 = 60.;
+
+    pub const SCALE: f32 = 3.;
+    pub const WIDTH: f32 = Self::PIXEL_WIDTH * Self::SCALE;
+    pub const HEIGHT: f32 = Self::PIXEL_HEIGHT * Self::SCALE;
+
+    /// Sprite id for the back side of the card.
+    pub const BACK_SPRITE_ID: usize = 27;
 }
 
 /// Marker component for card that is uncovered.
