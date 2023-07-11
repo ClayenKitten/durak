@@ -6,7 +6,6 @@ use std::f32::consts::FRAC_PI_2;
 
 use bevy::prelude::*;
 use card::{Card, CardInteractionPlugin, CardRank, CardSuit, Covered};
-use collider::Collider;
 use rand::seq::SliceRandom;
 use round::Trump;
 use strum::IntoEnumIterator;
@@ -42,25 +41,27 @@ fn main() {
                         ..default()
                     }),
                     ..default()
-                })
+                }),
         )
         .add_state::<GameScreen>()
+        .add_state::<SetupPhase>()
+        .add_event::<AdvanceSetupPhase>()
         .add_plugins(CardInteractionPlugin)
         .add_systems(Startup, startup)
-        .add_systems(Update,
+        .add_systems(
+            Update,
             (
-                spawn_deck,
-                shuffle_deck,
-                pick_trump,
-                deal_cards,
+                (
+                    spawn_deck.run_if(in_state(SetupPhase::CreateDeck)),
+                    shuffle_deck.run_if(in_state(SetupPhase::ShuffleDeck)),
+                    pick_trump.run_if(in_state(SetupPhase::PickTrump)),
+                    deal_cards.run_if(in_state(SetupPhase::DealCards)),
+                    uncover_player_cards.run_if(in_state(SetupPhase::UncoverPlayerCards)),
+                ),
+                advance_setup_phase,
             )
                 .chain()
-                .run_if(in_state(GameScreen::RoundSetup))
-        )
-        .add_systems(Update, display_hand.run_if(in_state(GameScreen::Round)))
-        .add_systems(
-            OnExit(GameScreen::Round),
-            cleanup_round,
+                .run_if(in_state(GameScreen::RoundSetup)),
         )
         .run();
 }
@@ -86,6 +87,7 @@ fn spawn_deck(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     camera: Query<&OrthographicProjection>,
+    mut advance: EventWriter<AdvanceSetupPhase>,
 ) {
     let texture_handle = asset_server.load("cards.png");
     let texture_atlas =
@@ -120,20 +122,26 @@ fn spawn_deck(
         }
     }
     commands.spawn(Deck(entities));
+    advance.send(AdvanceSetupPhase);
 }
 
-fn shuffle_deck(mut deck: Query<&mut Deck, Added<Deck>>) {
+fn shuffle_deck(
+    mut deck: Query<&mut Deck, Added<Deck>>,
+    mut advance: EventWriter<AdvanceSetupPhase>,
+) {
     if deck.is_empty() {
         return;
     }
     let deck = &mut deck.single_mut().0;
     deck.shuffle(&mut rand::thread_rng());
+    advance.send(AdvanceSetupPhase);
 }
 
 fn pick_trump(
     mut commands: Commands,
     mut deck: Query<&mut Deck, Added<Deck>>,
     mut card: Query<(&mut Transform, &CardSuit)>,
+    mut advance: EventWriter<AdvanceSetupPhase>,
 ) {
     if deck.is_empty() {
         return;
@@ -148,17 +156,14 @@ fn pick_trump(
     commands.entity(trump_card)
         .remove::<Covered>();
     commands.spawn(Trump(*trump));
-}
-
-fn cleanup_round() {
-
+    advance.send(AdvanceSetupPhase);
 }
 
 /// Give cards to players at the beginning of the round.
 fn deal_cards(
     mut hands: Query<&mut Hand>,
     mut deck: Query<&mut Deck, Added<Deck>>,
-    mut state: ResMut<NextState<GameScreen>>,
+    mut advance: EventWriter<AdvanceSetupPhase>,
 ) {
     if deck.is_empty() {
         return;
@@ -172,48 +177,23 @@ fn deal_cards(
             hand.0.push(card);
         }
     }
-    state.0 = Some(GameScreen::Round);
+    advance.send(AdvanceSetupPhase);
 }
 
-fn display_hand(
+fn uncover_player_cards(
     mut commands: Commands,
-    mut cards: Query<&mut Transform, (With<CardRank>, With<CardSuit>)>,
-    hands: Query<(&Player, &Hand), Changed<Hand>>,
-    camera: Query<&OrthographicProjection>,
+    player: Query<(&Player, &Hand)>,
+    mut advance: EventWriter<AdvanceSetupPhase>,
 ) {
-    const HORIZONTAL_GAP: f32 = 10.;
-
-    for (player, hand) in hands.iter() {
-        let area = camera.single().area;
-        let y = match player.is_controlled {
-            true => area.min.y + Card::HEIGHT / 2. - Card::HEIGHT / 3.,
-            false => area.max.y - Card::HEIGHT / 2. + Card::HEIGHT / 3.,
-        };
-        let max_offset = {
-            let number_of_cards = (hand.0.len() - 1) as f32;
-            number_of_cards * Card::WIDTH + number_of_cards * HORIZONTAL_GAP
-        };
-        for (number, entity) in hand.0.iter().enumerate() {
-            let x = {
-                let number = number as f32;
-                let offset = number * Card::WIDTH + number * HORIZONTAL_GAP;
-                offset - max_offset / 2.
-            };
-            let collider = Collider(
-                Rect::from_center_size(
-                    Vec2 { x, y },
-                    Vec2 { x: Card::WIDTH, y: Card::HEIGHT }
-                )
-            );
-            let mut card_transform = cards.get_mut(*entity)
-                .expect("card should exist");
-            card_transform.translation = Vec3::new(x, y, 0.0);
-            commands.entity(*entity).insert(collider);
-            if player.is_controlled {
-                commands.entity(*entity).remove::<Covered>();
-            }
+    for (player, hand) in player.iter() {
+        if !player.is_controlled {
+            continue;
+        }
+        for entity in hand.0.iter() {
+            commands.entity(*entity).remove::<Covered>();
         }
     }
+    advance.send(AdvanceSetupPhase);
 }
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
@@ -222,4 +202,39 @@ enum GameScreen {
     MainMenu,
     RoundSetup,
     Round,
+}
+
+#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+enum SetupPhase {
+    #[default]
+    CreateDeck,
+    ShuffleDeck,
+    DealCards,
+    PickTrump,
+    UncoverPlayerCards,
+}
+
+#[derive(Event)]
+pub struct AdvanceSetupPhase;
+
+fn advance_setup_phase(
+    event_reader: EventReader<AdvanceSetupPhase>,
+    mut next_game_phase: ResMut<NextState<GameScreen>>,
+    current_setup_phase: Res<State<SetupPhase>>,
+    mut next_setup_phase: ResMut<NextState<SetupPhase>>,
+) {
+    use SetupPhase::*;
+    if !event_reader.is_empty() {
+        let next_setup = match current_setup_phase.get() {
+            CreateDeck => ShuffleDeck,
+            ShuffleDeck => DealCards,
+            DealCards => PickTrump,
+            PickTrump => UncoverPlayerCards,
+            UncoverPlayerCards => {
+                next_game_phase.0 = Some(GameScreen::Round);
+                SetupPhase::default()
+            }
+        };
+        next_setup_phase.0 = Some(next_setup);
+    }
 }

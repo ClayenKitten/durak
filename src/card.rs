@@ -5,7 +5,7 @@ use crate::{collider::cursor_system, GameScreen};
 
 use self::events::CardClicked;
 
-/// Plugin that handles interaction with individual cards.
+/// Plugin that handles cards logic.
 pub struct CardInteractionPlugin;
 
 impl Plugin for CardInteractionPlugin {
@@ -13,6 +13,7 @@ impl Plugin for CardInteractionPlugin {
         app.add_event::<events::CardClicked>()
             .add_event::<events::CardHoverStarted>()
             .add_event::<events::CardHoverEnded>()
+            .add_plugins(movement::CardMovementPlugin)
             .add_systems(
                 Update,
                 (cursor_system, card_click, (cover_cards, uncover_cards))
@@ -120,6 +121,72 @@ pub enum CardRank {
 /// Marker component for card that is covered.
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Covered;
+
+pub mod movement {
+    use bevy::prelude::*;
+
+    use crate::{card::Card, collider::Collider, GameScreen, Hand, Player};
+
+    use super::{CardRank, CardSuit};
+
+    /// Plugin that update location of cards.
+    pub struct CardMovementPlugin;
+
+    impl Plugin for CardMovementPlugin {
+        fn build(&self, app: &mut App) {
+            app.add_systems(
+                Update,
+                (move_to_hand, move_to_table, move_to_discard).run_if(in_state(GameScreen::Round)),
+            );
+        }
+    }
+
+    pub fn move_to_hand(
+        mut commands: Commands,
+        mut cards: Query<&mut Transform, (With<CardRank>, With<CardSuit>)>,
+        hands: Query<(&Player, &Hand), Changed<Hand>>,
+        camera: Query<&OrthographicProjection>,
+    ) {
+        const HORIZONTAL_GAP: f32 = 10.;
+
+        for (player, hand) in hands.iter() {
+            if hand.0.is_empty() {
+                continue;
+            }
+
+            let area = camera.single().area;
+            let y = match player.is_controlled {
+                true => area.min.y + Card::HEIGHT / 2. - Card::HEIGHT / 3.,
+                false => area.max.y - Card::HEIGHT / 2. + Card::HEIGHT / 3.,
+            };
+            let max_offset = {
+                let number_of_cards = (hand.0.len() - 1) as f32;
+                number_of_cards * Card::WIDTH + number_of_cards * HORIZONTAL_GAP
+            };
+            for (number, entity) in hand.0.iter().enumerate() {
+                let x = {
+                    let number = number as f32;
+                    let offset = number * Card::WIDTH + number * HORIZONTAL_GAP;
+                    offset - max_offset / 2.
+                };
+                let collider = Collider(
+                    Rect::from_center_size(
+                        Vec2 { x, y },
+                        Vec2 { x: Card::WIDTH, y: Card::HEIGHT }
+                    )
+                );
+                let mut card_transform = cards.get_mut(*entity)
+                    .expect("card should exist");
+                card_transform.translation = Vec3::new(x, y, 0.0);
+                commands.entity(*entity).insert(collider);
+            }
+        }
+    }
+
+    fn move_to_table() {}
+
+    fn move_to_discard() {}
+}
 
 pub mod events {
     use bevy::prelude::*;
