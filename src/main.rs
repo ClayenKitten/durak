@@ -2,9 +2,7 @@ mod collider;
 
 use std::f32::consts::FRAC_PI_2;
 
-use bevy::{
-    prelude::*,
-};
+use bevy::prelude::*;
 use collider::{ClickedEvent, cursor_system, Collider};
 use rand::seq::SliceRandom;
 use strum::{EnumIter, IntoEnumIterator};
@@ -87,19 +85,15 @@ fn main() {
         .add_state::<GameScreen>()
         .add_event::<ClickedEvent>()
         .add_systems(Startup, startup)
-        .add_systems(
-            OnEnter(GameScreen::Round),
-            spawn_deck,
-        )
         .add_systems(Update,
             (
+                spawn_deck,
                 shuffle_deck,
                 pick_trump,
                 deal_cards,
             )
-                .run_if(in_state(GameScreen::Round))
-                .after(spawn_deck)
                 .chain()
+                .run_if(in_state(GameScreen::RoundSetup))
         )
         .add_systems(
             Update,
@@ -107,9 +101,8 @@ fn main() {
                 cursor_system,
                 card_click,
                 (
-                    uncover_cards,
-                    cover_cards,
-                    display_hand.after(deal_cards),
+                    (uncover_cards, cover_cards),
+                    display_hand,
                 ),
             )
                 .chain()
@@ -135,7 +128,7 @@ fn startup(
         Player { name: String::from("Not me"), is_controlled: false },
         Hand::default(),
     ));
-    state.0 = Some(GameScreen::Round);
+    state.0 = Some(GameScreen::RoundSetup);
 }
 
 fn spawn_deck(
@@ -251,6 +244,7 @@ fn cover_cards(mut removed: RemovedComponents<Uncovered>, mut query: Query<&mut 
 fn deal_cards(
     mut hands: Query<&mut Hand>,
     mut deck: Query<&mut Deck, Added<Deck>>,
+    mut state: ResMut<NextState<GameScreen>>,
 ) {
     if deck.is_empty() {
         return;
@@ -264,6 +258,7 @@ fn deal_cards(
             hand.0.push(card);
         }
     }
+    state.0 = Some(GameScreen::Round);
 }
 
 fn display_hand(
@@ -352,5 +347,6 @@ struct Uncovered;
 enum GameScreen {
     #[default]
     MainMenu,
+    RoundSetup,
     Round,
 }
