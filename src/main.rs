@@ -12,22 +12,22 @@ use round::Trump;
 use strum::IntoEnumIterator;
 
 #[derive(Debug, Component)]
-struct Player {
-    pub name: String,
+pub struct Player {
+    pub _name: String,
     pub is_controlled: bool,
 }
 
 /// Hand of the player containing all cards the player has.
 #[derive(Component, Debug, Clone, PartialEq, Eq, Default)]
-struct Hand(Vec<Entity>);
+pub struct Hand(Vec<Entity>);
 
 /// List of cards that are still in deck.
 #[derive(Component, Debug, Clone, PartialEq, Eq)]
-struct Deck(Vec<Entity>);
+pub struct Deck(Vec<Entity>);
 
 /// Marker component for card that is discarded.
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
-struct Discarded;
+pub struct Discarded;
 
 // Our Bevy app's entry point
 fn main() {
@@ -71,11 +71,11 @@ fn startup(
 ) {
     commands.spawn(Camera2dBundle::default());
     commands.spawn((
-        Player { name: String::from("Me"), is_controlled: true },
+        Player { _name: String::from("Me"), is_controlled: true },
         Hand::default(),
     ));
     commands.spawn((
-        Player { name: String::from("Not me"), is_controlled: false },
+        Player { _name: String::from("Not me"), is_controlled: false },
         Hand::default(),
     ));
     state.0 = Some(GameScreen::RoundSetup);
