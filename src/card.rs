@@ -1,6 +1,68 @@
 use bevy::prelude::*;
 use strum::EnumIter;
 
+use crate::{
+    collider::{cursor_system, ClickedEvent},
+    GameScreen,
+};
+
+/// Plugin that handles interaction with individual cards.
+pub struct CardInteractionPlugin;
+
+impl Plugin for CardInteractionPlugin {
+    fn build(&self, app: &mut App) {
+        app
+            .add_systems(
+                Update,
+                (
+                    cursor_system,
+                    card_click,
+                    (cover_cards, uncover_cards),
+                )
+                    .chain()
+                    .run_if(in_state(GameScreen::Round)),
+            );
+    }
+}
+
+/// Handles clicks on cards.
+fn card_click(
+    mut commands: Commands,
+    mut event_reader: EventReader<ClickedEvent>,
+    cards: Query<Option<&Covered>, (With<CardRank>, With<CardSuit>)>,
+) {
+    for ClickedEvent(entity) in event_reader.iter() {
+        match cards.get(*entity) {
+            Ok(Some(_)) => {
+                commands.entity(*entity).remove::<Covered>();
+            }
+            Ok(None) => {
+                commands.entity(*entity).insert(Covered);
+            }
+            Err(_) => continue,
+        }
+    }
+}
+
+/// Updates texture for every newly covered card.
+fn cover_cards(mut query: Query<&mut TextureAtlasSprite, Added<Covered>>) {
+    for mut texture in query.iter_mut() {
+        texture.index = Card::BACK_SPRITE_ID;
+    }
+}
+
+/// Updates texture for every newly uncovered card.
+fn uncover_cards(
+    mut query: Query<(&mut TextureAtlasSprite, &CardRank, &CardSuit)>,
+    mut removed: RemovedComponents<Covered>,
+) {
+    for entity in &mut removed {
+        if let Ok((mut texture, &rank, &suit)) = query.get_mut(entity) {
+            texture.index = Card::sprite_atlas_id(suit, rank);
+        }
+    }
+}
+
 /// Set of static data associated with cards.
 pub struct Card;
 

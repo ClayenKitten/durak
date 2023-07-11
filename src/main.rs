@@ -5,8 +5,8 @@ mod card;
 use std::f32::consts::FRAC_PI_2;
 
 use bevy::prelude::*;
-use card::{CardRank, CardSuit, Card, Covered};
-use collider::{ClickedEvent, cursor_system, Collider};
+use card::{CardRank, CardSuit, Card, Covered, CardInteractionPlugin};
+use collider::{ClickedEvent, Collider};
 use rand::seq::SliceRandom;
 use round::Trump;
 use strum::IntoEnumIterator;
@@ -46,6 +46,7 @@ fn main() {
         )
         .add_state::<GameScreen>()
         .add_event::<ClickedEvent>()
+        .add_plugins(CardInteractionPlugin)
         .add_systems(Startup, startup)
         .add_systems(Update,
             (
@@ -57,19 +58,7 @@ fn main() {
                 .chain()
                 .run_if(in_state(GameScreen::RoundSetup))
         )
-        .add_systems(
-            Update,
-            (
-                cursor_system,
-                card_click,
-                (
-                    (cover_cards, uncover_cards),
-                    display_hand,
-                ),
-            )
-                .chain()
-                .run_if(in_state(GameScreen::Round)),
-        )
+        .add_systems(Update, display_hand.run_if(in_state(GameScreen::Round)))
         .add_systems(
             OnExit(GameScreen::Round),
             cleanup_round,
@@ -166,25 +155,6 @@ fn cleanup_round() {
 
 }
 
-/// Updates texture for every newly covered card.
-fn cover_cards(mut query: Query<&mut TextureAtlasSprite, Added<Covered>>) {
-    for mut texture in query.iter_mut() {
-        texture.index = Card::BACK_SPRITE_ID;
-    }
-}
-
-/// Updates texture for every newly uncovered card.
-fn uncover_cards(
-    mut query: Query<(&mut TextureAtlasSprite, &CardRank, &CardSuit)>,
-    mut removed: RemovedComponents<Covered>,
-) {
-    for entity in &mut removed {
-        if let Ok((mut texture, &rank, &suit)) = query.get_mut(entity) {
-            texture.index = Card::sprite_atlas_id(suit, rank);
-        }
-    }
-}
-
 /// Give cards to players at the beginning of the round.
 fn deal_cards(
     mut hands: Query<&mut Hand>,
@@ -243,28 +213,6 @@ fn display_hand(
             if player.is_controlled {
                 commands.entity(*entity).remove::<Covered>();
             }
-        }
-    }
-}
-
-fn card_click(
-    mut commands: Commands,
-    mut event_reader: EventReader<ClickedEvent>,
-    cards: Query<Option<&Covered>, (With<CardRank>, With<CardSuit>)>,
-) {
-    for ClickedEvent(entity) in event_reader.iter() {
-        match cards.get(*entity) {
-            Ok(Some(_)) => {
-                commands
-                    .entity(*entity)
-                    .remove::<Covered>();
-            },
-            Ok(None) => {
-                commands
-                    .entity(*entity)
-                    .insert(Covered);
-            },
-            Err(_) => continue,
         }
     }
 }
