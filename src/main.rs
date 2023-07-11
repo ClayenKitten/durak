@@ -1,17 +1,13 @@
 mod collider;
+mod round;
 
 use std::f32::consts::FRAC_PI_2;
 
 use bevy::prelude::*;
 use collider::{ClickedEvent, cursor_system, Collider};
 use rand::seq::SliceRandom;
+use round::Trump;
 use strum::{EnumIter, IntoEnumIterator};
-
-// Each player also has a score. This component holds on to that score
-#[derive(Component)]
-struct Score {
-    value: usize,
-}
 
 #[derive(Debug, Component)]
 struct Player {
@@ -19,22 +15,9 @@ struct Player {
     pub is_controlled: bool,
 }
 
-#[derive(Resource)]
-struct GameState {
-    current_round: usize,
-    total_players: usize,
-    trump: CardSuit,
-    winning_player: Option<String>,
-}
-
-#[derive(Resource, Default)]
-struct GameMode {
-    players: usize,
-}
-
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 #[derive(Component, EnumIter)]
-enum CardSuit {
+pub enum CardSuit {
     Clover,
     Diamond,
     Heart,
@@ -43,7 +26,7 @@ enum CardSuit {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[derive(Component, EnumIter)]
-enum CardRank {
+pub enum CardRank {
     Six,
     Seven,
     Eight,
@@ -190,12 +173,13 @@ fn pick_trump(
     let deck = &mut deck.single_mut().0;
     let trump_card = *deck.first()
         .expect("deck shouldn't be empty at the moment of choosing trump card");
-    let (mut trump_transform, trump_suit) = card.get_mut(trump_card)
+    let (mut trump_transform, trump) = card.get_mut(trump_card)
         .expect("trump card should have transform and suit");
     trump_transform.rotate_z(FRAC_PI_2);
     trump_transform.translation.x += (Card::HEIGHT - Card::WIDTH) / 2.;
     commands.entity(trump_card)
         .insert(Uncovered);
+    commands.spawn(Trump(*trump));
 }
 
 fn cleanup_round() {
