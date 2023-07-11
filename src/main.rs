@@ -1,12 +1,12 @@
+mod card;
 mod collider;
 mod round;
-mod card;
 
 use std::f32::consts::FRAC_PI_2;
 
 use bevy::prelude::*;
-use card::{CardRank, CardSuit, Card, Covered, CardInteractionPlugin};
-use collider::{ClickedEvent, Collider};
+use card::{Card, CardInteractionPlugin, CardRank, CardSuit, Covered};
+use collider::Collider;
 use rand::seq::SliceRandom;
 use round::Trump;
 use strum::IntoEnumIterator;
@@ -45,7 +45,6 @@ fn main() {
                 })
         )
         .add_state::<GameScreen>()
-        .add_event::<ClickedEvent>()
         .add_plugins(CardInteractionPlugin)
         .add_systems(Startup, startup)
         .add_systems(Update,

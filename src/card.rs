@@ -1,24 +1,21 @@
 use bevy::prelude::*;
 use strum::EnumIter;
 
-use crate::{
-    collider::{cursor_system, ClickedEvent},
-    GameScreen,
-};
+use crate::{collider::cursor_system, GameScreen};
+
+use self::events::CardClicked;
 
 /// Plugin that handles interaction with individual cards.
 pub struct CardInteractionPlugin;
 
 impl Plugin for CardInteractionPlugin {
     fn build(&self, app: &mut App) {
-        app
+        app.add_event::<events::CardClicked>()
+            .add_event::<events::CardHoverStarted>()
+            .add_event::<events::CardHoverEnded>()
             .add_systems(
                 Update,
-                (
-                    cursor_system,
-                    card_click,
-                    (cover_cards, uncover_cards),
-                )
+                (cursor_system, card_click, (cover_cards, uncover_cards))
                     .chain()
                     .run_if(in_state(GameScreen::Round)),
             );
@@ -28,10 +25,10 @@ impl Plugin for CardInteractionPlugin {
 /// Handles clicks on cards.
 fn card_click(
     mut commands: Commands,
-    mut event_reader: EventReader<ClickedEvent>,
+    mut event_reader: EventReader<CardClicked>,
     cards: Query<Option<&Covered>, (With<CardRank>, With<CardSuit>)>,
 ) {
-    for ClickedEvent(entity) in event_reader.iter() {
+    for CardClicked(entity) in event_reader.iter() {
         match cards.get(*entity) {
             Ok(Some(_)) => {
                 commands.entity(*entity).remove::<Covered>();
@@ -123,3 +120,16 @@ pub enum CardRank {
 /// Marker component for card that is covered.
 #[derive(Component, Debug, Clone, Copy)]
 pub struct Covered;
+
+pub mod events {
+    use bevy::prelude::*;
+
+    #[derive(Event, Clone, Copy, PartialEq, Eq)]
+    pub struct CardClicked(pub Entity);
+
+    #[derive(Event, Clone, Copy, PartialEq, Eq)]
+    pub struct CardHoverStarted(pub Entity);
+
+    #[derive(Event, Clone, Copy, PartialEq, Eq)]
+    pub struct CardHoverEnded(pub Entity);
+}

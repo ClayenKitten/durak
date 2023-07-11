@@ -1,9 +1,11 @@
 //! Collider used for mouse interactions.
-//! 
+//!
 //! Should be replaced by [`bevy_mod_picking`](https://github.com/aevyrie/bevy_mod_picking)
 //! when one is updated to bevy 0.11.0.
 
 use bevy::prelude::*;
+
+use crate::card::{events::CardClicked, CardRank, CardSuit};
 
 #[derive(Component, Debug, Clone, Copy, PartialEq)]
 pub struct Collider(pub Rect);
@@ -14,20 +16,19 @@ impl From<Rect> for Collider {
     }
 }
 
-#[derive(Event, Clone, Copy, PartialEq, Eq)]
-pub struct ClickedEvent(pub Entity);
-
 pub fn cursor_system(
     window: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera>>,
     input: Res<Input<MouseButton>>,
     colliders: Query<(Entity, &Collider)>,
-    mut event_writer: EventWriter<ClickedEvent>,
+    cards: Query<(), (With<CardSuit>, With<CardRank>)>,
+    mut event_writer: EventWriter<CardClicked>,
 ) {
     let (camera, camera_transform) = camera.single();
     let window = window.single();
 
-    if let Some(world_position) = window.cursor_position()
+    if let Some(world_position) = window
+        .cursor_position()
         .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
         .map(|ray| ray.origin.truncate())
     {
@@ -38,7 +39,10 @@ pub fn cursor_system(
             if !input.just_pressed(MouseButton::Left) {
                 continue;
             }
-            event_writer.send(ClickedEvent(entity));
+            if !cards.contains(entity) {
+                continue;
+            }
+            event_writer.send(CardClicked(entity));
         }
     }
 }
