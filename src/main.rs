@@ -1,41 +1,20 @@
 mod collider;
 mod round;
+mod card;
 
 use std::f32::consts::FRAC_PI_2;
 
 use bevy::prelude::*;
+use card::{CardRank, CardSuit, Card, Covered};
 use collider::{ClickedEvent, cursor_system, Collider};
 use rand::seq::SliceRandom;
 use round::Trump;
-use strum::{EnumIter, IntoEnumIterator};
+use strum::IntoEnumIterator;
 
 #[derive(Debug, Component)]
 struct Player {
     pub name: String,
     pub is_controlled: bool,
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-#[derive(Component, EnumIter)]
-pub enum CardSuit {
-    Clover,
-    Diamond,
-    Heart,
-    Pike,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[derive(Component, EnumIter)]
-pub enum CardRank {
-    Six,
-    Seven,
-    Eight,
-    Nine,
-    Ten,
-    Jack,
-    Queen,
-    King,
-    Ace,
 }
 
 /// Hand of the player containing all cards the player has.
@@ -84,7 +63,7 @@ fn main() {
                 cursor_system,
                 card_click,
                 (
-                    (uncover_cards, cover_cards),
+                    (cover_cards, uncover_cards),
                     display_hand,
                 ),
             )
@@ -137,6 +116,7 @@ fn spawn_deck(
             let entity = commands.spawn((
                 suit,
                 rank,
+                Covered,
                 SpriteSheetBundle {
                     texture_atlas: texture_atlas_handle.clone(),
                     sprite: TextureAtlasSprite::new(Card::BACK_SPRITE_ID),
@@ -178,7 +158,7 @@ fn pick_trump(
     trump_transform.rotate_z(FRAC_PI_2);
     trump_transform.translation.x += (Card::HEIGHT - Card::WIDTH) / 2.;
     commands.entity(trump_card)
-        .insert(Uncovered);
+        .remove::<Covered>();
     commands.spawn(Trump(*trump));
 }
 
@@ -186,40 +166,21 @@ fn cleanup_round() {
 
 }
 
-/// Updates texture for every newly uncovered card.
-fn uncover_cards(
-    mut cards: Query<
-        (&mut TextureAtlasSprite, &CardRank, &CardSuit),
-        Added<Uncovered>,
-    >,
-) {
-    for (mut texture, rank, suit) in cards.iter_mut() {
-        let row = match suit {
-            CardSuit::Heart => 0,
-            CardSuit::Diamond => 1,
-            CardSuit::Clover => 2,
-            CardSuit::Pike => 3,
-        };
-        let column = match rank {
-            CardRank::Ace => 0,
-            CardRank::Six => 5,
-            CardRank::Seven => 6,
-            CardRank::Eight => 7,
-            CardRank::Nine => 8,
-            CardRank::Ten => 9,
-            CardRank::Jack => 10,
-            CardRank::Queen => 11,
-            CardRank::King => 12,
-        };
-        *texture = TextureAtlasSprite::new(row * 14 + column);
+/// Updates texture for every newly covered card.
+fn cover_cards(mut query: Query<&mut TextureAtlasSprite, Added<Covered>>) {
+    for mut texture in query.iter_mut() {
+        texture.index = Card::BACK_SPRITE_ID;
     }
 }
 
-/// Updates texture for every newly covered card.
-fn cover_cards(mut removed: RemovedComponents<Uncovered>, mut query: Query<&mut TextureAtlasSprite>) {
+/// Updates texture for every newly uncovered card.
+fn uncover_cards(
+    mut query: Query<(&mut TextureAtlasSprite, &CardRank, &CardSuit)>,
+    mut removed: RemovedComponents<Covered>,
+) {
     for entity in &mut removed {
-        if let Ok(mut sprite) = query.get_mut(entity) {
-            sprite.index = Card::BACK_SPRITE_ID;
+        if let Ok((mut texture, &rank, &suit)) = query.get_mut(entity) {
+            texture.index = Card::sprite_atlas_id(suit, rank);
         }
     }
 }
@@ -280,7 +241,7 @@ fn display_hand(
             card_transform.translation = Vec3::new(x, y, 0.0);
             commands.entity(*entity).insert(collider);
             if player.is_controlled {
-                commands.entity(*entity).insert(Uncovered);
+                commands.entity(*entity).remove::<Covered>();
             }
         }
     }
@@ -289,43 +250,24 @@ fn display_hand(
 fn card_click(
     mut commands: Commands,
     mut event_reader: EventReader<ClickedEvent>,
-    cards: Query<Option<&Uncovered>, (With<CardRank>, With<CardSuit>)>,
+    cards: Query<Option<&Covered>, (With<CardRank>, With<CardSuit>)>,
 ) {
     for ClickedEvent(entity) in event_reader.iter() {
         match cards.get(*entity) {
             Ok(Some(_)) => {
                 commands
                     .entity(*entity)
-                    .remove::<Uncovered>();
+                    .remove::<Covered>();
             },
             Ok(None) => {
                 commands
                     .entity(*entity)
-                    .insert(Uncovered);
+                    .insert(Covered);
             },
             Err(_) => continue,
         }
     }
 }
-
-/// Set of constants associated with cards.
-struct Card;
-
-impl Card {
-    pub const PIXEL_WIDTH: f32 = 42.;
-    pub const PIXEL_HEIGHT: f32 = 60.;
-
-    pub const SCALE: f32 = 3.;
-    pub const WIDTH: f32 = Self::PIXEL_WIDTH * Self::SCALE;
-    pub const HEIGHT: f32 = Self::PIXEL_HEIGHT * Self::SCALE;
-
-    /// Sprite id for the back side of the card.
-    pub const BACK_SPRITE_ID: usize = 27;
-}
-
-/// Marker component for card that is uncovered.
-#[derive(Component, Debug, Clone, Copy)]
-struct Uncovered;
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 enum GameScreen {
