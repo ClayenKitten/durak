@@ -1,8 +1,11 @@
+mod collider;
+
 use std::f32::consts::FRAC_PI_2;
 
 use bevy::{
     prelude::*,
 };
+use collider::{ClickedEvent, cursor_system, Collider};
 use rand::seq::SliceRandom;
 use strum::{EnumIter, IntoEnumIterator};
 
@@ -82,6 +85,7 @@ fn main() {
                 })
         )
         .add_state::<GameScreen>()
+        .add_event::<ClickedEvent>()
         .add_systems(Startup, startup)
         .add_systems(
             OnEnter(GameScreen::Round),
@@ -100,9 +104,15 @@ fn main() {
         .add_systems(
             Update,
             (
-                uncover_cards,
-                display_hand.after(deal_cards),
+                cursor_system,
+                card_click,
+                (
+                    uncover_cards,
+                    cover_cards,
+                    display_hand.after(deal_cards),
+                ),
             )
+                .chain()
                 .run_if(in_state(GameScreen::Round)),
         )
         .add_systems(
@@ -228,6 +238,15 @@ fn uncover_cards(
     }
 }
 
+/// Updates texture for every newly covered card.
+fn cover_cards(mut removed: RemovedComponents<Uncovered>, mut query: Query<&mut TextureAtlasSprite>) {
+    for entity in &mut removed {
+        if let Ok(mut sprite) = query.get_mut(entity) {
+            sprite.index = Card::BACK_SPRITE_ID;
+        }
+    }
+}
+
 /// Give cards to players at the beginning of the round.
 fn deal_cards(
     mut hands: Query<&mut Hand>,
@@ -271,13 +290,41 @@ fn display_hand(
                 let offset = number * Card::WIDTH + number * HORIZONTAL_GAP;
                 offset - max_offset / 2.
             };
+            let collider = Collider(
+                Rect::from_center_size(
+                    Vec2 { x, y },
+                    Vec2 { x: Card::WIDTH, y: Card::HEIGHT }
+                )
+            );
             let mut card_transform = cards.get_mut(*entity)
                 .expect("card should exist");
             card_transform.translation = Vec3::new(x, y, 0.0);
+            commands.entity(*entity).insert(collider);
             if player.is_controlled {
-                commands.entity(*entity)
-                    .insert(Uncovered);
+                commands.entity(*entity).insert(Uncovered);
             }
+        }
+    }
+}
+
+fn card_click(
+    mut commands: Commands,
+    mut event_reader: EventReader<ClickedEvent>,
+    cards: Query<Option<&Uncovered>, (With<CardRank>, With<CardSuit>)>,
+) {
+    for ClickedEvent(entity) in event_reader.iter() {
+        match cards.get(*entity) {
+            Ok(Some(_)) => {
+                commands
+                    .entity(*entity)
+                    .remove::<Uncovered>();
+            },
+            Ok(None) => {
+                commands
+                    .entity(*entity)
+                    .insert(Uncovered);
+            },
+            Err(_) => continue,
         }
     }
 }
