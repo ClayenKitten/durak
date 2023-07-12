@@ -80,6 +80,7 @@ fn main() {
                     primary_window: Some(Window {
                         title: String::from("Durak"),
                         resolution: (1280., 800.).into(),
+                        position: WindowPosition::Centered(MonitorSelection::Primary),
                         ..default()
                     }),
                     ..default()
