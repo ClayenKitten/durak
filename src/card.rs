@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use strum::EnumIter;
 
-use crate::{collider::cursor_system, GameScreen};
+use crate::{collider::cursor_system, GameScreen, Hand, Played, Player};
 
 use self::events::CardClicked;
 
@@ -28,17 +28,15 @@ impl Plugin for CardInteractionPlugin {
 fn card_click(
     mut commands: Commands,
     mut event_reader: EventReader<CardClicked>,
-    cards: Query<Option<&Covered>, (With<CardRank>, With<CardSuit>)>,
+    mut player: Query<(&Player, &mut Hand)>,
 ) {
     for CardClicked(entity) in event_reader.iter() {
-        match cards.get(*entity) {
-            Ok(Some(_)) => {
-                commands.entity(*entity).remove::<Covered>();
+        for (player, mut hand) in player.iter_mut() {
+            if player.is_controlled && hand.contains(*entity) {
+                hand.remove(*entity);
+                commands.entity(*entity).insert(Played::Attacking);
+                break;
             }
-            Ok(None) => {
-                commands.entity(*entity).insert(Covered);
-            }
-            Err(_) => continue,
         }
     }
 }
@@ -124,9 +122,11 @@ pub enum CardRank {
 pub struct Covered;
 
 pub mod movement {
+    use std::f32::consts::FRAC_PI_6;
+
     use bevy::prelude::*;
 
-    use crate::{card::Card, collider::Collider, GameScreen, Hand, Player};
+    use crate::{card::Card, collider::Collider, GameScreen, Hand, Played, Player};
 
     use super::{CardRank, CardSuit};
 
@@ -148,8 +148,6 @@ pub mod movement {
         hands: Query<(&Player, &Hand), Changed<Hand>>,
         camera: Query<&OrthographicProjection>,
     ) {
-        const HORIZONTAL_GAP: f32 = 10.;
-
         for (player, hand) in hands.iter() {
             if hand.is_empty() {
                 continue;
@@ -160,16 +158,8 @@ pub mod movement {
                 true => area.min.y + Card::HEIGHT / 2. - Card::HEIGHT / 3.,
                 false => area.max.y - Card::HEIGHT / 2. + Card::HEIGHT / 3.,
             };
-            let max_offset = {
-                let number_of_cards = (hand.count() - 1) as f32;
-                number_of_cards * Card::WIDTH + number_of_cards * HORIZONTAL_GAP
-            };
             for (number, entity) in hand.0.iter().enumerate() {
-                let x = {
-                    let number = number as f32;
-                    let offset = number * Card::WIDTH + number * HORIZONTAL_GAP;
-                    offset - max_offset / 2.
-                };
+                let x = card_x_location(number, hand.count());
                 let collider = Collider(
                     Rect::from_center_size(
                         Vec2 { x, y },
@@ -184,7 +174,48 @@ pub mod movement {
         }
     }
 
-    fn move_to_table() {}
+    fn move_to_table(
+        mut commands: Commands,
+        on_table: Query<(), With<Played>>,
+        mut cards: Query<
+            (Entity, &mut Transform, &Played),
+            (With<CardRank>, With<CardSuit>, Added<Played>),
+        >,
+    ) {
+        let mut already_on_table = on_table.iter().count() - 1;
+        for (entity, mut transform, played) in cards.iter_mut() {
+            let x = card_x_location(already_on_table, 6);
+            let y = 0.;
+            let z = match played {
+                Played::Attacking => 0.,
+                Played::Defending => 1.,
+            };
+            transform.translation = Vec3 { x, y, z };
+            if let Played::Defending = played {
+                transform.rotate_z(FRAC_PI_6);
+            }
+            commands.entity(entity).remove::<Collider>();
+            already_on_table += 1;
+        }
+    }
+
+    /// Calculates horizontal coordinate for card in hand or on table.
+    fn card_x_location(index: usize, total: usize) -> f32 {
+        debug_assert!(index < total);
+
+        const HORIZONTAL_GAP: f32 = 10.;
+
+        let max_offset = {
+            let number_of_cards = (total - 1) as f32;
+            number_of_cards * Card::WIDTH + number_of_cards * HORIZONTAL_GAP
+        };
+        let x = {
+            let number = index as f32;
+            let offset = number * Card::WIDTH + number * HORIZONTAL_GAP;
+            offset - max_offset / 2.
+        };
+        x
+    }
 
     fn move_to_discard() {}
 }
