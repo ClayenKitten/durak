@@ -92,8 +92,16 @@ fn main() {
         .run();
 }
 
-fn startup(mut commands: Commands, mut state: ResMut<NextState<GameScreen>>) {
+fn startup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut state: ResMut<NextState<GameScreen>>,
+) {
     commands.spawn(Camera2dBundle::default());
+    commands.spawn(SpriteBundle {
+        texture: asset_server.load("background.png"),
+        ..default()
+    });
     commands.spawn((
         Player { _name: String::from("Me"), is_controlled: true },
         Hand::default(),
