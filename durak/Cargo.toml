@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+durak_lib = { path = "../durak_lib", features = ["bevy"] }
 bevy = { version = "0.11.0", features = ["dynamic_linking"] }
 rand = "0.8.5"
 strum = { version = "0.25.0", features = ["derive"] }

@@ -4,8 +4,9 @@
 //! when one is updated to bevy 0.11.0.
 
 use bevy::prelude::*;
+use durak_lib::{CardRank, CardSuit};
 
-use crate::card::{events::CardClicked, CardRank, CardSuit};
+use crate::card::events::CardClicked;
 
 #[derive(Component, Debug, Clone, Copy, PartialEq)]
 pub struct Collider(pub Rect);

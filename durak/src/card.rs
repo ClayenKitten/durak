@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use strum::EnumIter;
+use durak_lib::{CardRank, CardSuit};
 
 use crate::{collider::cursor_system, round::Table, GameScreen, Hand, Player};
 
@@ -95,27 +95,6 @@ impl Card {
         };
         row * 14 + column
     }
-}
-
-#[derive(Component, EnumIter, Debug, PartialEq, Eq, Clone, Copy)]
-pub enum CardSuit {
-    Clover,
-    Diamond,
-    Heart,
-    Pike,
-}
-
-#[derive(Component, EnumIter, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum CardRank {
-    Six,
-    Seven,
-    Eight,
-    Nine,
-    Ten,
-    Jack,
-    Queen,
-    King,
-    Ace,
 }
 
 /// Marker component for card that is covered.

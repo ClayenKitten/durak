@@ -4,7 +4,7 @@ mod round;
 mod round_setup;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
-use card::{CardInteractionPlugin, CardSuit};
+use card::CardInteractionPlugin;
 use round_setup::RoundSetupPlugin;
 
 #[derive(Debug, Component)]

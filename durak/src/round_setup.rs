@@ -3,11 +3,12 @@
 use std::f32::consts::FRAC_PI_2;
 
 use bevy::prelude::*;
+use durak_lib::{CardRank, CardSuit};
 use rand::seq::SliceRandom;
 use strum::IntoEnumIterator;
 
 use crate::{
-    card::{Card, CardRank, CardSuit, Covered},
+    card::{Card, Covered},
     round::{Table, Trump},
     Deck, GameScreen, Hand, Player,
 };
