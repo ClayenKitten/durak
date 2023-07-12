@@ -3,7 +3,7 @@ mod collider;
 mod round;
 mod round_setup;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, render::camera::ScalingMode};
 use card::{CardInteractionPlugin, CardSuit};
 use round_setup::RoundSetupPlugin;
 
@@ -98,7 +98,13 @@ fn startup(
     asset_server: Res<AssetServer>,
     mut state: ResMut<NextState<GameScreen>>,
 ) {
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle {
+        projection: OrthographicProjection {
+            scaling_mode: ScalingMode::Fixed { width: 1280., height: 800. },
+            ..default()
+        },
+        ..default()
+    });
     commands.spawn(SpriteBundle {
         texture: asset_server.load("background.png"),
         ..default()
