@@ -14,9 +14,10 @@ impl Plugin for CardInteractionPlugin {
             .add_event::<events::CardHoverStarted>()
             .add_event::<events::CardHoverEnded>()
             .add_plugins(movement::CardMovementPlugin)
+            .add_systems(Update, (cover_cards, uncover_cards))
             .add_systems(
                 Update,
-                (cursor_system, card_click, (cover_cards, uncover_cards))
+                (cursor_system, card_click)
                     .chain()
                     .run_if(in_state(GameScreen::Round)),
             );
