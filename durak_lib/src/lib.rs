@@ -1,3 +1,5 @@
+pub mod request;
+
 #[cfg(feature = "bevy")]
 use bevy_ecs::component::Component;
 
