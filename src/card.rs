@@ -159,7 +159,7 @@ pub mod movement {
                 false => area.max.y - Card::HEIGHT / 2. + Card::HEIGHT / 3.,
             };
             for (number, entity) in hand.0.iter().enumerate() {
-                let x = card_x_location(number, hand.count());
+                let x = card_x_location(number, hand.count(), 10.);
                 let collider = Collider(
                     Rect::from_center_size(
                         Vec2 { x, y },
@@ -184,7 +184,7 @@ pub mod movement {
     ) {
         let mut already_on_table = on_table.iter().count() - 1;
         for (entity, mut transform, played) in cards.iter_mut() {
-            let x = card_x_location(already_on_table, 6);
+            let x = card_x_location(already_on_table, 6, 40.);
             let y = 0.;
             let z = match played {
                 Played::Attacking => 0.,
@@ -200,18 +200,16 @@ pub mod movement {
     }
 
     /// Calculates horizontal coordinate for card in hand or on table.
-    fn card_x_location(index: usize, total: usize) -> f32 {
+    fn card_x_location(index: usize, total: usize, gap: f32) -> f32 {
         debug_assert!(index < total);
-
-        const HORIZONTAL_GAP: f32 = 10.;
 
         let max_offset = {
             let number_of_cards = (total - 1) as f32;
-            number_of_cards * Card::WIDTH + number_of_cards * HORIZONTAL_GAP
+            number_of_cards * Card::WIDTH + number_of_cards * gap
         };
         let x = {
             let number = index as f32;
-            let offset = number * Card::WIDTH + number * HORIZONTAL_GAP;
+            let offset = number * Card::WIDTH + number * gap;
             offset - max_offset / 2.
         };
         x
