@@ -151,7 +151,7 @@ pub mod movement {
         const HORIZONTAL_GAP: f32 = 10.;
 
         for (player, hand) in hands.iter() {
-            if hand.0.is_empty() {
+            if hand.is_empty() {
                 continue;
             }
 
@@ -161,7 +161,7 @@ pub mod movement {
                 false => area.max.y - Card::HEIGHT / 2. + Card::HEIGHT / 3.,
             };
             let max_offset = {
-                let number_of_cards = (hand.0.len() - 1) as f32;
+                let number_of_cards = (hand.count() - 1) as f32;
                 number_of_cards * Card::WIDTH + number_of_cards * HORIZONTAL_GAP
             };
             for (number, entity) in hand.0.iter().enumerate() {

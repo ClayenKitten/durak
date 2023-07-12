@@ -166,7 +166,7 @@ fn deal_cards(
         for hand in hands.iter_mut() {
             let card = deck.pop()
                 .expect("deck shouldn't empty during dealing");
-            hand.0.push(card);
+            hand.add(card);
         }
     }
     advance.send(AdvanceSetupPhase);
