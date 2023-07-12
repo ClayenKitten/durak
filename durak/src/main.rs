@@ -1,5 +1,6 @@
 mod card;
 mod collider;
+mod network;
 mod round;
 mod round_setup;
 
