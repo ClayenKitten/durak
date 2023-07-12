@@ -59,13 +59,6 @@ impl Hand {
 #[derive(Component, Debug, Clone, PartialEq, Eq)]
 pub struct Deck(Vec<Entity>);
 
-/// Marker component for card that is played.
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Played {
-    Attacking,
-    Defending,
-}
-
 /// Marker component for card that is discarded.
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Discarded;

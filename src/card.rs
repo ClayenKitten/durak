@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use strum::EnumIter;
 
-use crate::{collider::cursor_system, GameScreen, Hand, Played, Player};
+use crate::{collider::cursor_system, round::Table, GameScreen, Hand, Player};
 
 use self::events::CardClicked;
 
@@ -26,15 +26,16 @@ impl Plugin for CardInteractionPlugin {
 
 /// Handles clicks on cards.
 fn card_click(
-    mut commands: Commands,
     mut event_reader: EventReader<CardClicked>,
     mut player: Query<(&Player, &mut Hand)>,
+    mut table: Query<&mut Table>,
 ) {
+    let mut table = table.single_mut();
     for CardClicked(entity) in event_reader.iter() {
         for (player, mut hand) in player.iter_mut() {
             if player.is_controlled && hand.contains(*entity) {
                 hand.remove(*entity);
-                commands.entity(*entity).insert(Played::Attacking);
+                table.play(*entity);
                 break;
             }
         }
@@ -126,7 +127,7 @@ pub mod movement {
 
     use bevy::prelude::*;
 
-    use crate::{card::Card, collider::Collider, GameScreen, Hand, Played, Player};
+    use crate::{card::Card, collider::Collider, round::Table, GameScreen, Hand, Player};
 
     use super::{CardRank, CardSuit};
 
@@ -176,26 +177,29 @@ pub mod movement {
 
     fn move_to_table(
         mut commands: Commands,
-        on_table: Query<(), With<Played>>,
-        mut cards: Query<
-            (Entity, &mut Transform, &Played),
-            (With<CardRank>, With<CardSuit>, Added<Played>),
-        >,
+        mut table: Query<&mut Table, Changed<Table>>,
+        mut cards: Query<&mut Transform, (With<CardRank>, With<CardSuit>)>,
     ) {
-        let mut already_on_table = on_table.iter().count() - 1;
-        for (entity, mut transform, played) in cards.iter_mut() {
-            let x = card_x_location(already_on_table, 6, 40.);
-            let y = 0.;
-            let z = match played {
-                Played::Attacking => 0.,
-                Played::Defending => 1.,
-            };
-            transform.translation = Vec3 { x, y, z };
-            if let Played::Defending = played {
-                transform.rotate_z(FRAC_PI_6);
+        if table.is_empty() {
+            return;
+        }
+        let table = table.single_mut();
+
+        let occupied = table.occupied_slots();
+        for (number, slot) in table.slots().iter().enumerate().take(occupied) {
+            let x = card_x_location(number, occupied, 40.);
+            // Attacking
+            let attacking = slot.attacking.unwrap();
+            let mut transform = cards.get_mut(attacking).unwrap();
+            transform.translation = Vec3 { x, y: 0., z: 1. };
+            commands.entity(attacking).remove::<Collider>();
+            // Defending
+            if let Some(defending) = slot.defending {
+                let mut transform = cards.get_mut(defending).unwrap();
+                transform.translation = Vec3 { x, y: 0., z: 1. };
+                transform.rotation = Quat::from_rotation_z(-FRAC_PI_6);
+                commands.entity(defending).remove::<Collider>();
             }
-            commands.entity(entity).remove::<Collider>();
-            already_on_table += 1;
         }
     }
 

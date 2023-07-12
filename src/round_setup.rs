@@ -8,7 +8,7 @@ use strum::IntoEnumIterator;
 
 use crate::{
     card::{Card, CardRank, CardSuit, Covered},
-    round::Trump,
+    round::{Table, Trump},
     Deck, GameScreen, Hand, Player,
 };
 
@@ -22,7 +22,7 @@ impl Plugin for RoundSetupPlugin {
                 Update,
                 (
                     (
-                        spawn_deck.run_if(in_state(SetupPhase::CreateDeck)),
+                        (spawn_deck, spawn_table).run_if(in_state(SetupPhase::CreateDeck)),
                         shuffle_deck.run_if(in_state(SetupPhase::ShuffleDeck)),
                         pick_trump.run_if(in_state(SetupPhase::PickTrump)),
                         deal_cards.run_if(in_state(SetupPhase::DealCards)),
@@ -116,6 +116,11 @@ fn spawn_deck(
     advance.send(AdvanceSetupPhase);
 }
 
+fn spawn_table(mut commands: Commands, mut advance: EventWriter<AdvanceSetupPhase>) {
+    commands.spawn(Table::default());
+    advance.send(AdvanceSetupPhase);
+}
+
 fn shuffle_deck(
     mut deck: Query<&mut Deck, Added<Deck>>,
     mut advance: EventWriter<AdvanceSetupPhase>,
@@ -164,8 +169,7 @@ fn deal_cards(
     let mut hands: Vec<Mut<Hand>> = hands.iter_mut().collect();
     for _ in 0..6 {
         for hand in hands.iter_mut() {
-            let card = deck.pop()
-                .expect("deck shouldn't empty during dealing");
+            let card = deck.pop().expect("deck shouldn't empty during dealing");
             hand.add(card);
         }
     }
