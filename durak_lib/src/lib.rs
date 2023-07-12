@@ -3,14 +3,12 @@ pub mod request;
 #[cfg(feature = "bevy")]
 use bevy_ecs::component::Component;
 
-#[cfg(feature = "serde")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use strum::EnumIter;
 
-#[derive(EnumIter, Debug, PartialEq, Eq, Clone, Copy)]
+#[derive(EnumIter, Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(Component))]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum CardSuit {
     Clover,
     Diamond,
@@ -18,9 +16,8 @@ pub enum CardSuit {
     Pike,
 }
 
-#[derive(EnumIter, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(EnumIter, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(Component))]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum CardRank {
     Six,
     Seven,
