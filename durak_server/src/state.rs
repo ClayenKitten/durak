@@ -23,20 +23,6 @@ impl Games {
         id
     }
 
-    /// Attempts to join existing game with id and password.
-    ///
-    /// Returns [PlayerId] if successful.
-    pub fn join(&self, id: u64, password: String) -> Result<PlayerId, JoinGameError> {
-        let mut games = self.0.lock().unwrap();
-        let Some(game) = games.get_mut(&id) else {
-            return Err(JoinGameError::NotFound);
-        };
-        if game.password != password {
-            return Err(JoinGameError::InvalidPassword);
-        }
-        game.add_player().ok_or(JoinGameError::TooManyPlayers)
-    }
-
     /// Evalutes provided function with mutable reference to game.
     pub fn with_game<T>(&self, id: u64, func: impl FnOnce(&mut Game) -> T) -> Option<T> {
         let mut games = self.0.lock().unwrap();

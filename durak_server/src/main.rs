@@ -52,8 +52,22 @@ async fn create_game(State(games): State<Games>, Query(data): Query<CreateGameDa
     .unwrap()
 }
 
-async fn join_game(State(games): State<Games>, Query(data): Query<JoinGameData>) -> String {
-    let responce = match games.join(data.id, data.password) {
+async fn join_game(State(games): State<Games>, Query(data): Query<JoinGameData>) -> (StatusCode, String) {
+    let mut code = StatusCode::OK;
+    
+    let responce = match games.with_game(data.id, |game| game.join(data.password)) {
+        Some(Ok(val)) => Ok(val),
+        Some(Err(e)) => {
+            code = StatusCode::BAD_REQUEST;
+            Err(e)
+        },
+        None => {
+            code = StatusCode::NOT_FOUND;
+            Err(JoinGameError::NotFound)
+        },
+    };
+
+    let responce = match responce {
         Ok(player_id) => {
             tracing::debug!("joined game `{}`", data.id);
             JoinGameResponce::Ok {
@@ -73,7 +87,7 @@ async fn join_game(State(games): State<Games>, Query(data): Query<JoinGameData>)
             JoinGameResponce::TooManyPlayers
         }
     };
-    serde_json::to_string(&responce).unwrap()
+    (code, serde_json::to_string(&responce).unwrap())
 }
 
 fn generate_token(game_id: u64, player_id: PlayerId) -> Token {

@@ -2,7 +2,7 @@
 
 use durak_lib::{
     common::{Card, PlayerId},
-    CardRank, CardSuit,
+    CardRank, CardSuit, network::JoinGameError,
 };
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -32,6 +32,16 @@ impl Game {
                 hand: Hand::default(),
             }],
         }
+    }
+
+    /// Attempts to join existing game with id and password.
+    ///
+    /// Returns [PlayerId] if successful.
+    pub fn join(&mut self, password: String) -> Result<PlayerId, JoinGameError> {
+        if self.password != password {
+            return Err(JoinGameError::InvalidPassword);
+        }
+        self.add_player().ok_or(JoinGameError::TooManyPlayers)
     }
 
     /// Adds new player to the game.
