@@ -87,7 +87,7 @@ impl Games {
 }
 
 #[derive(Debug)]
-struct Game {
+pub struct Game {
     password: String,
     trump: CardSuit,
     state: GameState,

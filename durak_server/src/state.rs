@@ -35,4 +35,11 @@ impl Games {
         }
         game.add_player().is_some()
     }
+
+    /// Evalutes provided function with mutable reference to game.
+    pub fn with_game<T>(&self, id: u64, func: impl FnOnce(&mut Game) -> T) -> Option<T> {
+        let mut games = self.0.lock().unwrap();
+        let game = games.get_mut(&id)?;
+        Some(func(game))
+    }
 }
