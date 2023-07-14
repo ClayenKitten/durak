@@ -9,18 +9,18 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::common::{Card, PlayerId};
+use crate::common::{Card, GameId, PlayerId};
 
 /// Token used to uniquely identify each player session.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Token {
-    game_id: u64,
+    game_id: GameId,
     player_id: PlayerId,
     secret: u32,
 }
 
 impl Token {
-    pub fn new(game_id: u64, player_id: PlayerId, secret: u32) -> Self {
+    pub fn new(game_id: GameId, player_id: PlayerId, secret: u32) -> Self {
         Self {
             game_id,
             player_id,
@@ -55,7 +55,7 @@ impl IntoResponse for CreateGameResponce {
 /// Query parameters used to join created game.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JoinGameData {
-    pub id: u64,
+    pub id: GameId,
     pub password: String,
 }
 

@@ -2,7 +2,7 @@ pub mod game;
 pub mod state;
 
 use durak_lib::{
-    common::{Card, PlayerId},
+    common::{Card, GameId, PlayerId},
     network::{
         CreateGameData, CreateGameResponce, JoinGameData, JoinGameError, JoinGameResponce, Token,
     },
@@ -90,13 +90,13 @@ async fn join_game(
     responce
 }
 
-fn generate_token(game_id: u64, player_id: PlayerId) -> Token {
+fn generate_token(game_id: GameId, player_id: PlayerId) -> Token {
     Token::new(game_id, player_id, thread_rng().gen())
 }
 
 async fn play_card(
     State(games): State<Games>,
-    Path(id): Path<u64>,
+    Path(id): Path<GameId>,
     Query(card): Query<Card>,
 ) -> String {
     games
