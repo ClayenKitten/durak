@@ -8,7 +8,7 @@ use std::{
 use durak_lib::common::PlayerId;
 use rand::Rng;
 
-use crate::Game;
+use crate::game::Game;
 
 /// Collection of all ongoing games.
 #[derive(Debug, Clone, Default)]
