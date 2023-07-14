@@ -26,6 +26,7 @@ async fn main() {
     let app = Router::new()
         .route("/create", post(create_game))
         .route("/join", post(join_game))
+        .route("/game/:game_id/play", post(play_card))
         .fallback(not_found)
         .with_state(Games::default());
 
@@ -91,4 +92,16 @@ async fn join_game(
 
 fn generate_token(game_id: u64, player_id: PlayerId) -> Token {
     Token::new(game_id, player_id, thread_rng().gen())
+}
+
+async fn play_card(
+    State(games): State<Games>,
+    Path(id): Path<u64>,
+    Query(card): Query<Card>,
+) -> String {
+    games
+        .with_game(id, |game| {
+            todo!();
+        })
+        .unwrap_or_else(|| String::from("Game not found"))
 }

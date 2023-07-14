@@ -99,7 +99,30 @@ pub enum JoinGameError {
 
 /// Query parameters used to play card.
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PlayCardDate {
+pub struct PlayCardData {
     pub player: PlayerId,
     pub card: Card,
+}
+
+/// Responce to card played.
+#[derive(Debug, Serialize, Deserialize)]
+pub enum PlayCardResponce {
+    Ok,
+    InvalidCard,
+    NotInHand,
+    AuthFailed,
+}
+
+#[cfg(feature = "axum")]
+impl IntoResponse for PlayCardResponce {
+    fn into_response(self) -> Response {
+        let code = match &self {
+            PlayCardResponce::Ok => StatusCode::OK,
+            PlayCardResponce::InvalidCard => StatusCode::BAD_REQUEST,
+            PlayCardResponce::NotInHand => StatusCode::BAD_REQUEST,
+            PlayCardResponce::AuthFailed => StatusCode::UNAUTHORIZED,
+        };
+        let body = serde_json::to_string(&self).unwrap();
+        (code, body).into_response()
+    }
 }
