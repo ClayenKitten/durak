@@ -1,6 +1,11 @@
 //! Request and responce data structures used by both server and client.
 
-use axum::http::StatusCode;
+#[cfg(feature = "axum")]
+use axum::{
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
+
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -37,13 +42,13 @@ pub enum CreateGameResponce {
 }
 
 #[cfg(feature = "axum")]
-impl axum::response::IntoResponse for CreateGameResponce {
-    fn into_response(self) -> axum::response::Response {
+impl IntoResponse for CreateGameResponce {
+    fn into_response(self) -> Response {
         let code = match self {
             CreateGameResponce::Ok { .. } => StatusCode::OK,
         };
         let body = serde_json::to_string(&self).unwrap();
-        axum::response::IntoResponse::into_response((code, body))
+        (code, body).into_response()
     }
 }
 
@@ -68,8 +73,8 @@ pub enum JoinGameResponce {
 }
 
 #[cfg(feature = "axum")]
-impl axum::response::IntoResponse for JoinGameResponce {
-    fn into_response(self) -> axum::response::Response {
+impl IntoResponse for JoinGameResponce {
+    fn into_response(self) -> Response {
         let code = match &self {
             JoinGameResponce::Ok { .. } => StatusCode::OK,
             JoinGameResponce::NotFound => StatusCode::NOT_FOUND,
@@ -77,7 +82,7 @@ impl axum::response::IntoResponse for JoinGameResponce {
             JoinGameResponce::TooManyPlayers => StatusCode::BAD_REQUEST,
         };
         let body = serde_json::to_string(&self).unwrap();
-        axum::response::IntoResponse::into_response((code, body))
+        (code, body).into_response()
     }
 }
 
