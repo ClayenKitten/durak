@@ -5,7 +5,7 @@ use durak_lib::{
     network::JoinGameError,
     CardRank, CardSuit,
 };
-use rand::Rng;
+use rand::{seq::SliceRandom, thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 
@@ -26,7 +26,7 @@ impl Game {
             password,
             trump: Self::pick_trump(),
             state: GameState::Created,
-            deck: Self::create_deck(),
+            deck: Deck::new(),
             table: Vec::with_capacity(6),
             players: vec![Player {
                 id: PlayerId::new(0),
@@ -70,16 +70,6 @@ impl Game {
             _ => unreachable!(),
         }
     }
-
-    fn create_deck() -> Deck {
-        let mut cards = Vec::with_capacity(36);
-        for suit in CardSuit::iter() {
-            for rank in CardRank::iter() {
-                cards.push(Card { suit, rank });
-            }
-        }
-        Deck(cards.try_into().unwrap())
-    }
 }
 
 /// State of the game.
@@ -96,7 +86,35 @@ pub enum GameState {
 }
 
 #[derive(Debug)]
-struct Deck(pub [Card; 36]);
+struct Deck(Vec<Card>);
+
+impl Deck {
+    /// Creates new (not shuffled) deck.
+    pub fn new() -> Self {
+        let mut cards = Vec::with_capacity(36);
+        for suit in CardSuit::iter() {
+            for rank in CardRank::iter() {
+                cards.push(Card { suit, rank });
+            }
+        }
+        Self(cards)
+    }
+
+    /// Shuffles all cards in the deck.
+    pub fn shuffle(&mut self) {
+        self.0.shuffle(&mut thread_rng());
+    }
+
+    /// Takes card from the top of the deck.
+    pub fn take(&mut self) -> Option<Card> {
+        self.0.pop()
+    }
+
+    /// Returns `true` if deck is empty.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
 
 #[derive(Debug)]
 struct Player {
