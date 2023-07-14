@@ -2,6 +2,26 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::common::{PlayerId, Card};
+
+/// Token used to uniquely identify each player session.
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Token {
+    game_id: u64,
+    player_id: PlayerId,
+    secret: u32,
+}
+
+impl Token {
+    pub fn new(game_id: u64, player_id: PlayerId, secret: u32) -> Self {
+        Self {
+            game_id,
+            player_id,
+            secret,
+        }
+    }
+}
+
 /// Query parameters used to create new game.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CreateGameData {

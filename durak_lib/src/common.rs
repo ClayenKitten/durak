@@ -6,6 +6,7 @@ use crate::{CardRank, CardSuit};
 
 /// A game-wide unique identificator of player.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
 pub struct PlayerId(u8);
 
 impl PlayerId {
