@@ -6,6 +6,7 @@ mod round_setup;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
 use card::CardInteractionPlugin;
+use network::NetworkPlugin;
 use round_setup::RoundSetupPlugin;
 
 #[derive(Debug, Component)]
@@ -83,6 +84,7 @@ fn main() {
         .add_state::<GameScreen>()
         .add_plugins(RoundSetupPlugin)
         .add_plugins(CardInteractionPlugin)
+        .add_plugins(NetworkPlugin)
         .add_systems(Startup, startup)
         .run();
 }
