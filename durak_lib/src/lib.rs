@@ -1,4 +1,5 @@
-pub mod request;
+pub mod common;
+pub mod network;
 
 #[cfg(feature = "bevy")]
 use bevy_ecs::component::Component;
@@ -16,7 +17,9 @@ pub enum CardSuit {
     Pike,
 }
 
-#[derive(EnumIter, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    EnumIter, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
 #[cfg_attr(feature = "bevy", derive(Component))]
 pub enum CardRank {
     Six,
