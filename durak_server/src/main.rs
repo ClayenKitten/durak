@@ -1,9 +1,11 @@
-pub mod state;
 pub mod game;
+pub mod state;
 
 use durak_lib::{
     common::{Card, PlayerId},
-    network::{CreateGameData, JoinGameData, CreateGameResponce, Token, JoinGameResponce},
+    network::{
+        CreateGameData, CreateGameResponce, JoinGameData, JoinGameError, JoinGameResponce, Token,
+    },
 };
 
 use axum::{
@@ -13,7 +15,7 @@ use axum::{
     routing::post,
     Router,
 };
-use rand::{Rng, thread_rng};
+use rand::{thread_rng, Rng};
 use state::Games;
 use std::net::SocketAddr;
 
@@ -44,32 +46,32 @@ async fn create_game(State(games): State<Games>, Query(data): Query<CreateGameDa
     let game_id = games.create(data.password);
     tracing::debug!("created game `{game_id}`");
     let player_id = PlayerId::new(0);
-    serde_json::to_string(
-        &CreateGameResponce::Ok {
-            token: generate_token(game_id, player_id)
-        }
-    ).unwrap()
+    serde_json::to_string(&CreateGameResponce::Ok {
+        token: generate_token(game_id, player_id),
+    })
+    .unwrap()
 }
 
 async fn join_game(State(games): State<Games>, Query(data): Query<JoinGameData>) -> String {
-    use state::JoinGameResult::*;
     let responce = match games.join(data.id, data.password) {
         Ok(player_id) => {
             tracing::debug!("joined game `{}`", data.id);
-            JoinGameResponce::Ok { token: generate_token(data.id, player_id) }
-        },
-        NotFound => {
+            JoinGameResponce::Ok {
+                token: generate_token(data.id, player_id),
+            }
+        }
+        Err(JoinGameError::NotFound) => {
             tracing::debug!("attempted to join nonexisting game `{}`", data.id);
             JoinGameResponce::NotFound
-        },
-        InvalidPassword => {
+        }
+        Err(JoinGameError::InvalidPassword) => {
             tracing::debug!("attempted to join with wrong password`{}`", data.id);
             JoinGameResponce::InvalidPassword
-        },
-        TooManyPlayers => {
+        }
+        Err(JoinGameError::TooManyPlayers) => {
             tracing::debug!("attempted to join full game `{}`", data.id);
             JoinGameResponce::TooManyPlayers
-        },
+        }
     };
     serde_json::to_string(&responce).unwrap()
 }

@@ -1,6 +1,7 @@
 //! Request and responce data structures used by both server and client.
 
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::common::{PlayerId, Card};
 
@@ -51,6 +52,17 @@ pub enum JoinGameResponce {
     /// Password doesn't match.
     InvalidPassword,
     /// Game is already full.
+    TooManyPlayers,
+}
+
+/// Error that occured when attempted to join the game.
+#[derive(Debug, Error)]
+pub enum JoinGameError {
+    #[error("game not found")]
+    NotFound,
+    #[error("password doesn't match")]
+    InvalidPassword,
+    #[error("too many players")]
     TooManyPlayers,
 }
 

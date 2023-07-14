@@ -5,7 +5,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use durak_lib::common::PlayerId;
+use durak_lib::{common::PlayerId, network::JoinGameError};
 use rand::Rng;
 
 use crate::game::Game;
@@ -24,18 +24,17 @@ impl Games {
     }
 
     /// Attempts to join existing game with id and password.
-    pub fn join(&self, id: u64, password: String) -> JoinGameResult {
+    ///
+    /// Returns [PlayerId] if successful.
+    pub fn join(&self, id: u64, password: String) -> Result<PlayerId, JoinGameError> {
         let mut games = self.0.lock().unwrap();
         let Some(game) = games.get_mut(&id) else {
-            return JoinGameResult::NotFound;
+            return Err(JoinGameError::NotFound);
         };
         if game.password != password {
-            return JoinGameResult::InvalidPassword;
+            return Err(JoinGameError::InvalidPassword);
         }
-        match game.add_player() {
-            Some(id) => JoinGameResult::Ok(id),
-            None => JoinGameResult::TooManyPlayers,
-        }
+        game.add_player().ok_or(JoinGameError::TooManyPlayers)
     }
 
     /// Evalutes provided function with mutable reference to game.
@@ -44,12 +43,4 @@ impl Games {
         let game = games.get_mut(&id)?;
         Some(func(game))
     }
-}
-
-#[derive(Debug)]
-pub enum JoinGameResult {
-    Ok(PlayerId),
-    NotFound,
-    InvalidPassword,
-    TooManyPlayers,
 }

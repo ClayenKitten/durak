@@ -1,10 +1,12 @@
 //! Game state and logic.
 
-use durak_lib::{common::{PlayerId, Card}, CardSuit, CardRank};
+use durak_lib::{
+    common::{Card, PlayerId},
+    CardRank, CardSuit,
+};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
-
 
 #[derive(Debug)]
 pub struct Game {
@@ -68,7 +70,6 @@ impl Game {
         Deck(cards.try_into().unwrap())
     }
 }
-
 
 /// State of the game.
 #[derive(Debug, Serialize, Deserialize)]
