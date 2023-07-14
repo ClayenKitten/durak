@@ -10,6 +10,7 @@ use strum::EnumIter;
 
 #[derive(EnumIter, Debug, PartialEq, Eq, Clone, Copy, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(Component))]
+#[serde(rename_all = "lowercase")]
 pub enum CardSuit {
     Clover,
     Diamond,
@@ -21,6 +22,7 @@ pub enum CardSuit {
     EnumIter, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
 )]
 #[cfg_attr(feature = "bevy", derive(Component))]
+#[serde(rename_all = "lowercase")]
 pub enum CardRank {
     Six,
     Seven,
