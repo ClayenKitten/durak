@@ -42,29 +42,28 @@ async fn not_found() -> impl IntoResponse {
     (StatusCode::NOT_FOUND, "Not found")
 }
 
-async fn create_game(State(games): State<Games>, Query(data): Query<CreateGameData>) -> String {
+async fn create_game(
+    State(games): State<Games>,
+    Query(data): Query<CreateGameData>,
+) -> impl IntoResponse {
     let game_id = games.create(data.password);
-    tracing::debug!("created game `{game_id}`");
     let player_id = PlayerId::new(0);
-    serde_json::to_string(&CreateGameResponce::Ok {
+
+    tracing::debug!("created game `{game_id}`");
+
+    CreateGameResponce::Ok {
         token: generate_token(game_id, player_id),
-    })
-    .unwrap()
+    }
 }
 
-async fn join_game(State(games): State<Games>, Query(data): Query<JoinGameData>) -> (StatusCode, String) {
-    let mut code = StatusCode::OK;
-    
+async fn join_game(
+    State(games): State<Games>,
+    Query(data): Query<JoinGameData>,
+) -> impl IntoResponse {
     let responce = match games.with_game(data.id, |game| game.join(data.password)) {
         Some(Ok(val)) => Ok(val),
-        Some(Err(e)) => {
-            code = StatusCode::BAD_REQUEST;
-            Err(e)
-        },
-        None => {
-            code = StatusCode::NOT_FOUND;
-            Err(JoinGameError::NotFound)
-        },
+        Some(Err(e)) => Err(e),
+        None => Err(JoinGameError::NotFound),
     };
 
     let responce = match responce {
@@ -87,7 +86,7 @@ async fn join_game(State(games): State<Games>, Query(data): Query<JoinGameData>)
             JoinGameResponce::TooManyPlayers
         }
     };
-    (code, serde_json::to_string(&responce).unwrap())
+    responce
 }
 
 fn generate_token(game_id: u64, player_id: PlayerId) -> Token {

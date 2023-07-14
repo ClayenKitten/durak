@@ -1,9 +1,10 @@
 //! Request and responce data structures used by both server and client.
 
+use axum::http::StatusCode;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::common::{PlayerId, Card};
+use crate::common::{Card, PlayerId};
 
 /// Token used to uniquely identify each player session.
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -35,6 +36,17 @@ pub enum CreateGameResponce {
     Ok { token: Token },
 }
 
+#[cfg(feature = "axum")]
+impl axum::response::IntoResponse for CreateGameResponce {
+    fn into_response(self) -> axum::response::Response {
+        let code = match self {
+            CreateGameResponce::Ok { .. } => StatusCode::OK,
+        };
+        let body = serde_json::to_string(&self).unwrap();
+        axum::response::IntoResponse::into_response((code, body))
+    }
+}
+
 /// Query parameters used to join created game.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JoinGameData {
@@ -53,6 +65,20 @@ pub enum JoinGameResponce {
     InvalidPassword,
     /// Game is already full.
     TooManyPlayers,
+}
+
+#[cfg(feature = "axum")]
+impl axum::response::IntoResponse for JoinGameResponce {
+    fn into_response(self) -> axum::response::Response {
+        let code = match &self {
+            JoinGameResponce::Ok { .. } => StatusCode::OK,
+            JoinGameResponce::NotFound => StatusCode::NOT_FOUND,
+            JoinGameResponce::InvalidPassword => StatusCode::BAD_REQUEST,
+            JoinGameResponce::TooManyPlayers => StatusCode::BAD_REQUEST,
+        };
+        let body = serde_json::to_string(&self).unwrap();
+        axum::response::IntoResponse::into_response((code, body))
+    }
 }
 
 /// Error that occured when attempted to join the game.

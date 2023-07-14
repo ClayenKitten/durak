@@ -2,7 +2,8 @@
 
 use durak_lib::{
     common::{Card, PlayerId},
-    CardRank, CardSuit, network::JoinGameError,
+    network::JoinGameError,
+    CardRank, CardSuit,
 };
 use rand::Rng;
 use serde::{Deserialize, Serialize};
