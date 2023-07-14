@@ -1,3 +1,5 @@
+pub mod state;
+
 use durak_lib::{
     common::{Card, PlayerId},
     network::{CreateGameData, JoinGameData},
@@ -5,7 +7,7 @@ use durak_lib::{
 };
 
 use axum::{
-    extract::{Query, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::post,
@@ -13,11 +15,8 @@ use axum::{
 };
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    net::SocketAddr,
-    sync::{Arc, Mutex},
-};
+use state::Games;
+use std::net::SocketAddr;
 use strum::IntoEnumIterator;
 
 #[tokio::main]
