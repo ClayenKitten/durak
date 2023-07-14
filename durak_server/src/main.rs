@@ -2,7 +2,7 @@ pub mod state;
 
 use durak_lib::{
     common::{Card, PlayerId},
-    network::{CreateGameData, JoinGameData},
+    network::{CreateGameData, JoinGameData, CreateGameResponce, Token, JoinGameResponce},
     CardRank, CardSuit,
 };
 
@@ -13,7 +13,7 @@ use axum::{
     routing::post,
     Router,
 };
-use rand::Rng;
+use rand::{Rng, thread_rng};
 use serde::{Deserialize, Serialize};
 use state::Games;
 use std::net::SocketAddr;
@@ -43,47 +43,41 @@ async fn not_found() -> impl IntoResponse {
 }
 
 async fn create_game(State(games): State<Games>, Query(data): Query<CreateGameData>) -> String {
-    let id = games.create(data.password);
-    tracing::debug!("created game `{id}`");
-    id.to_string()
-}
-
-async fn join_game(State(games): State<Games>, Query(data): Query<JoinGameData>) -> &'static str {
-    if games.join(data.id, data.password) {
-        tracing::debug!("joined game `{}`", data.id);
-        "Joined successfully"
-    } else {
-        tracing::debug!("failed to join game `{}`", data.id);
-        "Error"
-    }
-}
-
-/// Collection of all ongoing games.
-#[derive(Debug, Clone, Default)]
-struct Games(Arc<Mutex<HashMap<u64, Game>>>);
-
-impl Games {
-    /// Creates new game with provided password.
-    pub fn create(&self, password: String) -> u64 {
-        let id = rand::thread_rng().gen();
-        let mut games = self.0.lock().unwrap();
-        games.insert(id, Game::new(password));
-        id
-    }
-
-    /// Attempts to join existing game with id and password.
-    ///
-    /// Returns `true` if joined successfuly.
-    pub fn join(&self, id: u64, password: String) -> bool {
-        let mut games = self.0.lock().unwrap();
-        let Some(game) = games.get_mut(&id) else {
-            return false;
-        };
-        if game.password != password {
-            return false;
+    let game_id = games.create(data.password);
+    tracing::debug!("created game `{game_id}`");
+    let player_id = PlayerId::new(0);
+    serde_json::to_string(
+        &CreateGameResponce::Ok {
+            token: generate_token(game_id, player_id)
         }
-        game.add_player().is_some()
-    }
+    ).unwrap()
+}
+
+async fn join_game(State(games): State<Games>, Query(data): Query<JoinGameData>) -> String {
+    use state::JoinGameResult::*;
+    let responce = match games.join(data.id, data.password) {
+        Ok(player_id) => {
+            tracing::debug!("joined game `{}`", data.id);
+            JoinGameResponce::Ok { token: generate_token(data.id, player_id) }
+        },
+        NotFound => {
+            tracing::debug!("attempted to join nonexisting game `{}`", data.id);
+            JoinGameResponce::NotFound
+        },
+        InvalidPassword => {
+            tracing::debug!("attempted to join with wrong password`{}`", data.id);
+            JoinGameResponce::InvalidPassword
+        },
+        TooManyPlayers => {
+            tracing::debug!("attempted to join full game `{}`", data.id);
+            JoinGameResponce::TooManyPlayers
+        },
+    };
+    serde_json::to_string(&responce).unwrap()
+}
+
+fn generate_token(game_id: u64, player_id: PlayerId) -> Token {
+    Token::new(game_id, player_id, thread_rng().gen())
 }
 
 #[derive(Debug)]
