@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use strum::EnumIter;
 
-#[derive(EnumIter, Debug, PartialEq, Eq, Clone, Copy, Serialize, Deserialize)]
+#[derive(EnumIter, Debug, PartialEq, Eq, Clone, Copy, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(Component))]
 pub enum CardSuit {
     Clover,
@@ -16,7 +16,7 @@ pub enum CardSuit {
     Pike,
 }
 
-#[derive(EnumIter, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(EnumIter, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(Component))]
 pub enum CardRank {
     Six,
