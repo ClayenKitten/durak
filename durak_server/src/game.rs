@@ -61,6 +61,20 @@ impl Game {
         Some(id)
     }
 
+    /// Starts the game.
+    ///
+    /// Deck is shuffled and cards are dealed.
+    pub fn start(&mut self) {
+        self.deck.shuffle();
+        for player in self.players.iter_mut() {
+            for _ in 0..6 {
+                let card = self.deck.take().unwrap();
+                player.hand.0.push(card)
+            }
+        }
+        self.state = GameState::ExpectAction(PlayerId::new(0));
+    }
+
     fn pick_trump() -> CardSuit {
         match rand::thread_rng().gen_range(0..=3) {
             0 => CardSuit::Clover,
