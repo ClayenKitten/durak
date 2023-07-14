@@ -55,6 +55,8 @@ async fn create_game(
     tracing::debug!("created game `{game_id}`");
 
     CreateGameResponce::Ok {
+        game_id,
+        player_id,
         token: auth.generate_token(game_id, player_id),
     }
 }
@@ -74,6 +76,7 @@ async fn join_game(
         Ok(player_id) => {
             tracing::debug!("joined game `{}`", data.id);
             JoinGameResponce::Ok {
+                player_id,
                 token: auth.generate_token(data.id, player_id),
             }
         }

@@ -30,7 +30,7 @@ pub struct CreateGameData {
 /// Responce for [CreateGameData] request.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum CreateGameResponce {
-    Ok { token: Token },
+    Ok { game_id: GameId, player_id: PlayerId, token: Token },
 }
 
 #[cfg(feature = "axum")]
@@ -55,7 +55,7 @@ pub struct JoinGameData {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum JoinGameResponce {
     /// Joined successfully.
-    Ok { token: Token },
+    Ok { player_id: PlayerId, token: Token },
     /// Game with provided id doesn't exist.
     NotFound,
     /// Password doesn't match.
