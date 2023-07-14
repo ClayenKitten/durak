@@ -12,20 +12,12 @@ use thiserror::Error;
 use crate::common::{Card, GameId, PlayerId};
 
 /// Token used to uniquely identify each player session.
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
-pub struct Token {
-    game_id: GameId,
-    player_id: PlayerId,
-    secret: u32,
-}
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct Token(u64);
 
 impl Token {
-    pub fn new(game_id: GameId, player_id: PlayerId, secret: u32) -> Self {
-        Self {
-            game_id,
-            player_id,
-            secret,
-        }
+    pub fn new(token: u64) -> Self {
+        Self(token)
     }
 }
 

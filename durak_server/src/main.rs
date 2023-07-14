@@ -4,7 +4,7 @@ pub mod state;
 use durak_lib::{
     common::{Card, GameId, PlayerId},
     network::{
-        CreateGameData, CreateGameResponce, JoinGameData, JoinGameError, JoinGameResponce, Token,
+        CreateGameData, CreateGameResponce, JoinGameData, JoinGameError, JoinGameResponce,
     },
 };
 
@@ -15,9 +15,10 @@ use axum::{
     routing::post,
     Router,
 };
-use rand::{thread_rng, Rng};
-use state::Games;
+use state::{Auth, Games};
 use std::net::SocketAddr;
+
+use crate::state::AppState;
 
 #[tokio::main]
 async fn main() {
@@ -28,7 +29,7 @@ async fn main() {
         .route("/join", post(join_game))
         .route("/game/:game_id/play", post(play_card))
         .fallback(not_found)
-        .with_state(Games::default());
+        .with_state(AppState::new());
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     tracing::debug!("listening on {}", addr);
@@ -44,6 +45,7 @@ async fn not_found() -> impl IntoResponse {
 }
 
 async fn create_game(
+    State(auth): State<Auth>,
     State(games): State<Games>,
     Query(data): Query<CreateGameData>,
 ) -> impl IntoResponse {
@@ -53,11 +55,12 @@ async fn create_game(
     tracing::debug!("created game `{game_id}`");
 
     CreateGameResponce::Ok {
-        token: generate_token(game_id, player_id),
+        token: auth.generate_token(game_id, player_id),
     }
 }
 
 async fn join_game(
+    State(auth): State<Auth>,
     State(games): State<Games>,
     Query(data): Query<JoinGameData>,
 ) -> impl IntoResponse {
@@ -71,7 +74,7 @@ async fn join_game(
         Ok(player_id) => {
             tracing::debug!("joined game `{}`", data.id);
             JoinGameResponce::Ok {
-                token: generate_token(data.id, player_id),
+                token: auth.generate_token(data.id, player_id),
             }
         }
         Err(JoinGameError::NotFound) => {
@@ -88,10 +91,6 @@ async fn join_game(
         }
     };
     responce
-}
-
-fn generate_token(game_id: GameId, player_id: PlayerId) -> Token {
-    Token::new(game_id, player_id, thread_rng().gen())
 }
 
 async fn play_card(
