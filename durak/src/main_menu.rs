@@ -13,7 +13,8 @@ impl Plugin for MainMenuPlugin {
             )
             .add_systems(OnEnter(MainMenuState::CreateGame), create_game::setup)
             .add_systems(OnEnter(MainMenuState::JoinGame), join_game::setup)
-            .add_systems(OnEnter(MainMenuState::Lobby), lobby::setup);
+            .add_systems(OnEnter(MainMenuState::Lobby), lobby::setup)
+            .add_systems(OnEnter(MainMenuState::None), cleanup::<main::OnMainMenu>);
     }
 }
 
@@ -24,10 +25,13 @@ pub enum MainMenuState {
     CreateGame,
     JoinGame,
     Lobby,
+    None,
 }
 
 mod main {
     use bevy::{app::AppExit, prelude::*};
+
+    use crate::GameScreen;
 
     use super::MainMenuState;
 
@@ -46,18 +50,20 @@ mod main {
             ..default()
         };
 
-        let mut container = commands.spawn(NodeBundle {
-            style: Style {
-                width: Val::Percent(100.),
-                height: Val::Percent(100.),
-                flex_direction: FlexDirection::Column,
-                align_items: AlignItems::Center,
-                justify_content: JustifyContent::Center,
-                row_gap: Val::Px(20.),
+        let mut container = commands.spawn(
+            (NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.),
+                    height: Val::Percent(100.),
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    row_gap: Val::Px(20.),
+                    ..default()
+                },
                 ..default()
-            },
-            ..default()
-        });
+            }, OnMainMenu)
+        );
 
         container.with_children(|parent| {
             parent
@@ -107,6 +113,7 @@ mod main {
             (&Interaction, &MenuButtonAction),
             (Changed<Interaction>, With<Button>),
         >,
+        mut game_state: ResMut<NextState<GameScreen>>,
         mut menu_state: ResMut<NextState<MainMenuState>>,
         mut exit: EventWriter<AppExit>,
     ) {
@@ -127,6 +134,10 @@ mod main {
         Join,
         Quit,
     }
+
+    /// Marker component used for cleanup.
+    #[derive(Debug, Clone, Copy, Component)]
+    pub struct OnMainMenu;
 }
 
 mod create_game {
@@ -169,5 +180,11 @@ fn button_system(
                 *color = NORMAL_BUTTON.into();
             }
         }
+    }
+}
+
+fn cleanup<T: Component>(mut commands: Commands, query: Query<Entity, With<T>>) {
+    for entity in query.iter() {
+        commands.entity(entity).despawn_recursive();
     }
 }
