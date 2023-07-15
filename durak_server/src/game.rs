@@ -16,8 +16,8 @@ pub struct Game {
     trump: CardSuit,
     state: GameState,
     deck: Deck,
-    table: Table,
     players: Vec<Player>,
+    round: Option<RoundState>,
 }
 
 impl Game {
@@ -29,11 +29,11 @@ impl Game {
             trump: Self::pick_trump(),
             state: GameState::Created,
             deck: Deck::new(),
-            table: Table::new(),
             players: vec![Player {
                 id: PlayerId::new(0),
                 hand: Hand::default(),
             }],
+            round: None,
         }
     }
 
@@ -74,8 +74,18 @@ impl Game {
                 player.hand.add(card)
             }
         }
+
+        let mut players = self.players.iter();
+        let attacker = players.next().expect("at least two players are required to start the game").id;
+        let defender = players.next().expect("at least two players are required to start the game").id;
+
+        self.round = Some(RoundState {
+            table: Table::new(),
+            attacker,
+            defender,
+        });
         // TODO: follow game's rules about first player.
-        self.state = GameState::ExpectAction(PlayerId::new(0));
+        self.state = GameState::ExpectAction(attacker);
     }
 
     fn pick_trump() -> CardSuit {
@@ -86,6 +96,22 @@ impl Game {
             3 => CardSuit::Pike,
             _ => unreachable!(),
         }
+    }
+}
+
+/// State of the game that is unique to the round.
+#[derive(Debug)]
+struct RoundState {
+    pub table: Table,
+    pub attacker: PlayerId,
+    pub defender: PlayerId,
+}
+
+impl RoundState {
+    /// Swaps attacker and defender.
+    // TODO: allow more than two players.
+    pub fn swap_players(&mut self) {
+        std::mem::swap(&mut self.attacker, &mut self.defender)
     }
 }
 
