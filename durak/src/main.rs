@@ -1,11 +1,13 @@
 mod card;
 mod collider;
+mod main_menu;
 mod network;
 mod round;
 mod round_setup;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
 use card::CardInteractionPlugin;
+use main_menu::MainMenuPlugin;
 use network::NetworkPlugin;
 use round_setup::RoundSetupPlugin;
 
@@ -82,6 +84,7 @@ fn main() {
                 }),
         )
         .add_state::<GameScreen>()
+        .add_plugins(MainMenuPlugin)
         .add_plugins(RoundSetupPlugin)
         .add_plugins(CardInteractionPlugin)
         .add_plugins(NetworkPlugin)
@@ -113,11 +116,10 @@ fn startup(
         Player { _name: String::from("Not me"), is_controlled: false },
         Hand::default(),
     ));
-    state.0 = Some(GameScreen::RoundSetup);
 }
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-enum GameScreen {
+pub enum GameScreen {
     #[default]
     MainMenu,
     RoundSetup,
