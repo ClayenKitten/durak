@@ -52,16 +52,6 @@ impl Card {
             false
         }
     }
-
-    /// Returns `true` if `self` can be placed alongside `others` during attack.
-    pub fn can_be_placed(&self, others: &[Card]) -> bool {
-        for other in others {
-            if self.rank == other.rank {
-                return true;
-            }
-        }
-        false
-    }
 }
 
 #[cfg(test)]
