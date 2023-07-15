@@ -1,13 +1,15 @@
+pub mod auth;
 pub mod game;
 pub mod state;
 
+use auth::Authenticate;
 use durak_lib::{
     common::{Card, GameId, PlayerId},
     network::{CreateGameData, CreateGameResponce, JoinGameData, JoinGameError, JoinGameResponce},
 };
 
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
@@ -25,11 +27,11 @@ async fn main() {
     let app = Router::new()
         .route("/create", post(create_game))
         .route("/join", post(join_game))
-        .route("/game/:game_id/state", get(state))
-        .route("/game/:game_id/play", post(play_card))
-        .route("/game/:game_id/take", post(take))
-        .route("/game/:game_id/retreat", post(retreat))
-        .route("/game/:game_id/leave", post(leave))
+        .route("/game/state", get(state))
+        .route("/game/play", post(play_card))
+        .route("/game/take", post(take))
+        .route("/game/retreat", post(retreat))
+        .route("/game/leave", post(leave))
         .fallback(not_found)
         .with_state(AppState::new());
 
@@ -103,25 +105,25 @@ async fn join_game(
 /// Starts the game.
 ///
 /// Should be called by game host.
-async fn start(Query(card): Query<Card>, State(games): State<Games>, State(auth): State<Auth>) {
+async fn start(State(games): State<Games>, Authenticate(player): Authenticate) {
     todo!();
 }
 
 /// Requests information about current [GameState](game::GameState).
 ///
 /// Should be called regularly by client unless server expects action from the client.
-async fn state(Path(game_id): Path<GameId>) {
+async fn state(Query(game_id): Query<GameId>, Authenticate(player): Authenticate) {
     todo!();
 }
 
 /// Plays specified card on the table.
 async fn play_card(
-    Path(game_id): Path<GameId>,
     Query(card): Query<Card>,
     State(games): State<Games>,
+    Authenticate(player): Authenticate,
 ) -> String {
     games
-        .with_game(game_id, |game| {
+        .with_game(player.game_id, |game| {
             todo!();
         })
         .unwrap_or_else(|| String::from("Game not found"))
@@ -130,22 +132,18 @@ async fn play_card(
 /// Takes all cards from the table into player's hand.
 ///
 /// Should be called by defending player.
-async fn take(Path(game_id): Path<GameId>, State(games): State<Games>, State(auth): State<Auth>) {
+async fn take(State(games): State<Games>, Authenticate(player): Authenticate) {
     todo!();
 }
 
 /// Discards all cards at the table.
 ///
 /// Should be called by attacking player.
-async fn retreat(
-    Path(game_id): Path<GameId>,
-    State(games): State<Games>,
-    State(auth): State<Auth>,
-) {
+async fn retreat(State(games): State<Games>, Authenticate(player): Authenticate) {
     todo!();
 }
 
 /// Leave the game.
-async fn leave(Path(game_id): Path<GameId>, State(games): State<Games>, State(auth): State<Auth>) {
+async fn leave(State(games): State<Games>, Authenticate(player): Authenticate) {
     todo!();
 }

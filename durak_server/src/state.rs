@@ -16,8 +16,8 @@ use crate::game::Game;
 
 #[derive(Clone)]
 pub struct AppState {
-    auth: Auth,
-    games: Games,
+    pub(crate) auth: Auth,
+    pub(crate) games: Games,
 }
 
 impl AppState {

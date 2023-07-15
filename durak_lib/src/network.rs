@@ -13,12 +13,23 @@ use crate::common::{Card, GameId, PlayerId};
 
 /// Token used to uniquely identify each player session.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(transparent)]
 pub struct Token(u64);
 
 impl Token {
     pub fn new(token: u64) -> Self {
         Self(token)
     }
+}
+
+/// Data that is passed by requests in `Authorization` header.
+///
+/// Should be encoded as json.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct AuthHeader {
+    pub game_id: GameId,
+    pub player_id: PlayerId,
+    pub token: Token,
 }
 
 /// Query parameters used to create new game.
@@ -30,7 +41,11 @@ pub struct CreateGameData {
 /// Responce for [CreateGameData] request.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum CreateGameResponce {
-    Ok { game_id: GameId, player_id: PlayerId, token: Token },
+    Ok {
+        game_id: GameId,
+        player_id: PlayerId,
+        token: Token,
+    },
 }
 
 #[cfg(feature = "axum")]
