@@ -125,8 +125,13 @@ async fn start(
 /// Requests information about current [GameState](game::GameState).
 ///
 /// Should be called regularly by client unless server expects action from the client.
-async fn state(Query(game_id): Query<GameId>, Authenticate(player): Authenticate) {
-    todo!();
+async fn state(
+    State(games): State<Games>,
+    Authenticate(player): Authenticate,
+) -> impl IntoResponse {
+    games
+        .with_game(player.game_id, |game| game.state.clone().into_response())
+        .unwrap_or((StatusCode::NOT_FOUND, "Game not found").into_response())
 }
 
 /// Plays specified card on the table.

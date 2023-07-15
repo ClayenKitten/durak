@@ -133,3 +133,27 @@ impl IntoResponse for PlayCardResponce {
         (code, body).into_response()
     }
 }
+
+/// State of the game.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum GameState {
+    /// Game is created, but not enough players connected.
+    Created,
+    /// Game is ready to start on host's command.
+    ReadyToStart,
+    /// Expecting player's action.
+    ExpectAction {
+        player: PlayerId,
+        table: Vec<(Card, Option<Card>)>,
+    },
+    /// Game is ended.
+    Completed { win: PlayerId },
+}
+
+#[cfg(feature = "axum")]
+impl IntoResponse for GameState {
+    fn into_response(self) -> Response {
+        let body = serde_json::to_string(&self).unwrap();
+        (StatusCode::OK, body).into_response()
+    }
+}

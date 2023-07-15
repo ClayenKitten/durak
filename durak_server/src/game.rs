@@ -2,19 +2,18 @@
 
 use durak_lib::{
     common::{Card, PlayerId},
-    network::JoinGameError,
+    network::{GameState, JoinGameError},
     CardRank, CardSuit,
 };
 use rand::{seq::SliceRandom, thread_rng, Rng};
-use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 
 #[derive(Debug)]
 pub struct Game {
     pub host: PlayerId,
     pub password: String,
+    pub state: GameState,
     trump: CardSuit,
-    state: GameState,
     deck: Deck,
     players: Vec<Player>,
     round: Option<RoundState>,
@@ -91,7 +90,10 @@ impl Game {
             defender,
         });
         // TODO: follow game's rules about first player.
-        self.state = GameState::ExpectAction(attacker);
+        self.state = GameState::ExpectAction {
+            table: Vec::new(),
+            player: attacker,
+        };
     }
 
     /// Places card on the table.
@@ -125,7 +127,10 @@ impl Game {
         }
         if round.table.retreat() {
             round.swap_players();
-            self.state = GameState::ExpectAction(round.defender);
+            self.state = GameState::ExpectAction {
+                player: round.defender,
+                table: round.table.0.clone(),
+            };
             true
         } else {
             false
@@ -149,7 +154,10 @@ impl Game {
         for card in cards {
             player.hand.add(card);
         }
-        self.state = GameState::ExpectAction(round.attacker);
+        self.state = GameState::ExpectAction {
+            player: round.attacker,
+            table: round.table.0.clone(),
+        };
         true
     }
 
@@ -178,19 +186,6 @@ impl RoundState {
     pub fn swap_players(&mut self) {
         std::mem::swap(&mut self.attacker, &mut self.defender)
     }
-}
-
-/// State of the game.
-#[derive(Debug, Serialize, Deserialize)]
-pub enum GameState {
-    /// Game is created, but not enough players connected.
-    Created,
-    /// Game is ready to start on host's command.
-    ReadyToStart,
-    /// Expecting specified player's action.
-    ExpectAction(PlayerId),
-    /// Game is ended.
-    Completed { win: PlayerId },
 }
 
 #[derive(Debug)]
