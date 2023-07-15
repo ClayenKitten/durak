@@ -76,8 +76,14 @@ impl Game {
         }
 
         let mut players = self.players.iter();
-        let attacker = players.next().expect("at least two players are required to start the game").id;
-        let defender = players.next().expect("at least two players are required to start the game").id;
+        let attacker = players
+            .next()
+            .expect("at least two players are required to start the game")
+            .id;
+        let defender = players
+            .next()
+            .expect("at least two players are required to start the game")
+            .id;
 
         self.round = Some(RoundState {
             table: Table::new(),
@@ -86,6 +92,65 @@ impl Game {
         });
         // TODO: follow game's rules about first player.
         self.state = GameState::ExpectAction(attacker);
+    }
+
+    /// Places card on the table.
+    ///
+    /// Returns `true` if played successfully.
+    pub fn play_card(&mut self, player_id: PlayerId, card: Card) -> bool {
+        let Some(ref mut round) = self.round else {
+            return false;
+        };
+        let Some(player) = self.players.iter_mut().find(|player| player.id == player_id) else {
+            return false;
+        };
+
+        if round.attacker == player_id {
+            player.hand.remove(card);
+            round.table.attack(card)
+        } else if round.defender == player_id {
+            player.hand.remove(card);
+            round.table.defend(card, self.trump)
+        } else {
+            false
+        }
+    }
+
+    pub fn retreat(&mut self, player_id: PlayerId) -> bool {
+        let Some(ref mut round) = self.round else {
+            return false;
+        };
+        if round.attacker != player_id {
+            return false;
+        }
+        if round.table.retreat() {
+            round.swap_players();
+            self.state = GameState::ExpectAction(round.defender);
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn take(&mut self, player_id: PlayerId) -> bool {
+        let Some(ref mut round) = self.round else {
+            return false;
+        };
+        let Some(player) = self.players.iter_mut().find(|player| player.id == player_id) else {
+            return false;
+        };
+
+        if round.defender != player_id {
+            return false;
+        }
+        let Some(cards) = round.table.take() else {
+            return false;
+        };
+        for card in cards {
+            player.hand.add(card);
+        }
+        self.state = GameState::ExpectAction(round.attacker);
+        true
     }
 
     fn pick_trump() -> CardSuit {

@@ -134,26 +134,49 @@ async fn play_card(
     Query(card): Query<Card>,
     State(games): State<Games>,
     Authenticate(player): Authenticate,
-) -> String {
+) -> impl IntoResponse {
     games
         .with_game(player.game_id, |game| {
-            todo!();
+            if game.play_card(player.player_id, card) {
+                StatusCode::OK
+            } else {
+                StatusCode::BAD_REQUEST
+            }
         })
-        .unwrap_or_else(|| String::from("Game not found"))
+        .unwrap_or(StatusCode::NOT_FOUND)
 }
 
 /// Takes all cards from the table into player's hand.
 ///
 /// Should be called by defending player.
-async fn take(State(games): State<Games>, Authenticate(player): Authenticate) {
-    todo!();
+async fn take(State(games): State<Games>, Authenticate(player): Authenticate) -> impl IntoResponse {
+    games
+        .with_game(player.game_id, |game| {
+            if game.take(player.player_id) {
+                StatusCode::OK
+            } else {
+                StatusCode::BAD_REQUEST
+            }
+        })
+        .unwrap_or(StatusCode::NOT_FOUND)
 }
 
 /// Discards all cards at the table.
 ///
 /// Should be called by attacking player.
-async fn retreat(State(games): State<Games>, Authenticate(player): Authenticate) {
-    todo!();
+async fn retreat(
+    State(games): State<Games>,
+    Authenticate(player): Authenticate,
+) -> impl IntoResponse {
+    games
+        .with_game(player.game_id, |game| {
+            if game.retreat(player.player_id) {
+                StatusCode::OK
+            } else {
+                StatusCode::BAD_REQUEST
+            }
+        })
+        .unwrap_or(StatusCode::NOT_FOUND)
 }
 
 /// Leave the game.
