@@ -27,6 +27,7 @@ async fn main() {
     let app = Router::new()
         .route("/create", post(create_game))
         .route("/join", post(join_game))
+        .route("/game/start", post(start))
         .route("/game/state", get(state))
         .route("/game/play", post(play_card))
         .route("/game/take", post(take))
@@ -105,8 +106,20 @@ async fn join_game(
 /// Starts the game.
 ///
 /// Should be called by game host.
-async fn start(State(games): State<Games>, Authenticate(player): Authenticate) {
-    todo!();
+async fn start(
+    State(games): State<Games>,
+    Authenticate(player): Authenticate,
+) -> impl IntoResponse {
+    games
+        .with_game(player.game_id, |game| {
+            if player.player_id != game.host {
+                (StatusCode::UNAUTHORIZED, "Only host may start the game")
+            } else {
+                game.start();
+                (StatusCode::OK, "Ok")
+            }
+        })
+        .unwrap_or((StatusCode::NOT_FOUND, "Game not found"))
 }
 
 /// Requests information about current [GameState](game::GameState).

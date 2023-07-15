@@ -11,6 +11,7 @@ use strum::IntoEnumIterator;
 
 #[derive(Debug)]
 pub struct Game {
+    pub host: PlayerId,
     pub password: String,
     trump: CardSuit,
     state: GameState,
@@ -23,6 +24,7 @@ impl Game {
     /// Creates new game with provided password set.
     pub fn new(password: String) -> Self {
         Self {
+            host: PlayerId::new(0),
             password,
             trump: Self::pick_trump(),
             state: GameState::Created,
@@ -72,6 +74,7 @@ impl Game {
                 player.hand.0.push(card)
             }
         }
+        // TODO: follow game's rules about first player.
         self.state = GameState::ExpectAction(PlayerId::new(0));
     }
 
