@@ -3,16 +3,14 @@ pub mod state;
 
 use durak_lib::{
     common::{Card, GameId, PlayerId},
-    network::{
-        CreateGameData, CreateGameResponce, JoinGameData, JoinGameError, JoinGameResponce,
-    },
+    network::{CreateGameData, CreateGameResponce, JoinGameData, JoinGameError, JoinGameResponce},
 };
 
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::post,
+    routing::{get, post},
     Router,
 };
 use state::{Auth, Games};
@@ -27,7 +25,11 @@ async fn main() {
     let app = Router::new()
         .route("/create", post(create_game))
         .route("/join", post(join_game))
+        .route("/game/:game_id/state", get(state))
         .route("/game/:game_id/play", post(play_card))
+        .route("/game/:game_id/take", post(take))
+        .route("/game/:game_id/retreat", post(retreat))
+        .route("/game/:game_id/leave", post(leave))
         .fallback(not_found)
         .with_state(AppState::new());
 
@@ -44,6 +46,7 @@ async fn not_found() -> impl IntoResponse {
     (StatusCode::NOT_FOUND, "Not found")
 }
 
+/// Creates new game.
 async fn create_game(
     State(auth): State<Auth>,
     State(games): State<Games>,
@@ -61,6 +64,7 @@ async fn create_game(
     }
 }
 
+/// Joins already created game.
 async fn join_game(
     State(auth): State<Auth>,
     State(games): State<Games>,
@@ -96,14 +100,52 @@ async fn join_game(
     responce
 }
 
+/// Starts the game.
+///
+/// Should be called by game host.
+async fn start(Query(card): Query<Card>, State(games): State<Games>, State(auth): State<Auth>) {
+    todo!();
+}
+
+/// Requests information about current [GameState](game::GameState).
+///
+/// Should be called regularly by client unless server expects action from the client.
+async fn state(Path(game_id): Path<GameId>) {
+    todo!();
+}
+
+/// Plays specified card on the table.
 async fn play_card(
-    State(games): State<Games>,
-    Path(id): Path<GameId>,
+    Path(game_id): Path<GameId>,
     Query(card): Query<Card>,
+    State(games): State<Games>,
 ) -> String {
     games
-        .with_game(id, |game| {
+        .with_game(game_id, |game| {
             todo!();
         })
         .unwrap_or_else(|| String::from("Game not found"))
+}
+
+/// Takes all cards from the table into player's hand.
+///
+/// Should be called by defending player.
+async fn take(Path(game_id): Path<GameId>, State(games): State<Games>, State(auth): State<Auth>) {
+    todo!();
+}
+
+/// Discards all cards at the table.
+///
+/// Should be called by attacking player.
+async fn retreat(
+    Path(game_id): Path<GameId>,
+    State(games): State<Games>,
+    State(auth): State<Auth>,
+) {
+    todo!();
+}
+
+/// Leave the game.
+async fn leave(Path(game_id): Path<GameId>, State(games): State<Games>, State(auth): State<Auth>) {
+    todo!();
 }
