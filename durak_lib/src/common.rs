@@ -40,3 +40,94 @@ pub struct Card {
     pub suit: CardSuit,
     pub rank: CardRank,
 }
+
+impl Card {
+    /// Returns `true` if `self` can beat `other` (with regard to `trump`).
+    pub fn can_beat(&self, other: Card, trump: CardSuit) -> bool {
+        if self.suit == other.suit {
+            self.rank > other.rank
+        } else if self.suit == trump {
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Returns `true` if `self` can be placed alongside `others` during attack.
+    pub fn can_be_placed(&self, others: &[Card]) -> bool {
+        for other in others {
+            if self.rank == other.rank {
+                return true;
+            }
+        }
+        false
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::{CardRank, CardSuit};
+
+    use super::Card;
+
+    #[test]
+    fn test_can_beat_common_suit() {
+        let attacking = Card {
+            suit: CardSuit::Clover,
+            rank: CardRank::Jack,
+        };
+
+        let defending = Card {
+            suit: CardSuit::Clover,
+            rank: CardRank::Ace,
+        };
+        assert!(
+            defending.can_beat(attacking, CardSuit::Diamond),
+            "ace should be able to beat jack"
+        );
+
+        let defending = Card {
+            suit: CardSuit::Clover,
+            rank: CardRank::Six,
+        };
+        assert!(
+            !defending.can_beat(attacking, CardSuit::Diamond),
+            "six shouldn't be able to beat jack"
+        );
+
+        let defending = Card {
+            suit: CardSuit::Clover,
+            rank: CardRank::Jack,
+        };
+        assert!(
+            !defending.can_beat(attacking, CardSuit::Diamond),
+            "jack shouldn't be able to beat jack"
+        );
+    }
+
+    #[test]
+    fn test_can_beat_trump() {
+        let attacking = Card {
+            suit: CardSuit::Clover,
+            rank: CardRank::Jack,
+        };
+
+        let defending = Card {
+            suit: CardSuit::Diamond,
+            rank: CardRank::Six,
+        };
+        assert!(
+            defending.can_beat(attacking, CardSuit::Diamond),
+            "trump should be able to beat any non-trump"
+        );
+
+        let defending = Card {
+            suit: CardSuit::Diamond,
+            rank: CardRank::Ace,
+        };
+        assert!(
+            !defending.can_beat(attacking, CardSuit::Clover),
+            "non-trump shouldn't be able to beat any trump"
+        );
+    }
+}
