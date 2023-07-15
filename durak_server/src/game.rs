@@ -71,7 +71,7 @@ impl Game {
         for player in self.players.iter_mut() {
             for _ in 0..6 {
                 let card = self.deck.take().unwrap();
-                player.hand.0.push(card)
+                player.hand.add(card)
             }
         }
         // TODO: follow game's rules about first player.
@@ -139,5 +139,37 @@ struct Player {
     pub hand: Hand,
 }
 
-#[derive(Debug, Default)]
-struct Hand(pub Vec<Card>);
+#[derive(Debug)]
+struct Hand(Vec<Card>);
+
+impl Hand {
+    /// Creates new empty hand.
+    pub fn new() -> Self {
+        Hand(Vec::with_capacity(6))
+    }
+
+    /// Adds card to the hand.
+    pub fn add(&mut self, card: Card) {
+        self.0.push(card);
+    }
+
+    /// Removes card from the hand.
+    ///
+    /// Returns `true` if card was in the hand.
+    pub fn remove(&mut self, card: Card) -> bool {
+        match self.0.iter().position(|card_| *card_ == card) {
+            Some(index) => {
+                self.0.remove(index);
+                true
+            }
+            None => false,
+        }
+    }
+}
+
+impl Default for Hand {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
