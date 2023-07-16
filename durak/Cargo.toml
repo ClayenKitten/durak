@@ -9,4 +9,5 @@ bevy = { version = "0.11.0", features = ["dynamic_linking"] }
 bevy_mod_reqwest = { git = "https://github.com/TotalKrill/bevy_mod_reqwest.git", rev = "21280abd663d6a7d13003b3f68dba6601c60228d" }
 rand = "0.8.5"
 strum = { version = "0.25.0", features = ["derive"] }
+serde = { version = "1.0.171", features = ["derive"] }
 serde_json = "1.0.102"
