@@ -4,6 +4,7 @@ mod main_menu;
 mod network;
 mod round;
 mod round_setup;
+mod ui_utils;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
 use card::CardInteractionPlugin;

@@ -257,7 +257,7 @@ mod lobby {
     use bevy::prelude::*;
     use durak_lib::common::PlayerId;
 
-    use crate::main_menu::Colors;
+    use crate::ui_utils::Colors;
 
     use super::{main::MenuButtonAction, spawn_button};
 
@@ -468,15 +468,6 @@ fn cleanup<T: Component>(mut commands: Commands, query: Query<Entity, With<T>>) 
     for entity in query.iter() {
         commands.entity(entity).despawn_recursive();
     }
-}
-
-pub struct Colors;
-
-impl Colors {
-    pub const PRIMARY: Color = Color::rgb(0.2, 0.2, 0.2);
-    pub const SECONDARY: Color = Color::rgb(0.5, 0.5, 0.5);
-    pub const BACKGROUND: Color = Color::rgb(0.5, 0.5, 0.5);
-    pub const TEXT: Color = Color::rgb(0.9, 0.9, 0.9);
 }
 
 fn spawn_button(parent: &mut ChildBuilder, text: &str, action: MenuButtonAction) {
