@@ -26,11 +26,17 @@ impl Display for GameId {
 /// A game-wide unique identificator of player.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct PlayerId(u8);
+pub struct PlayerId(pub u8);
 
 impl PlayerId {
     pub fn new(id: u8) -> Self {
         PlayerId(id)
+    }
+}
+
+impl Display for PlayerId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
