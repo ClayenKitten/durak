@@ -6,15 +6,21 @@ impl Plugin for MainMenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_state::<MainMenuState>()
             .add_systems(Update, button_system)
-            .add_systems(OnEnter(MainMenuState::Main), main::setup)
             .add_systems(
                 Update,
-                main::menu_action.run_if(in_state(MainMenuState::Main)),
+                main::menu_action.run_if(not(in_state(MainMenuState::None))),
             )
+            // Setup
+            .add_systems(OnEnter(MainMenuState::Main), main::setup)
             .add_systems(OnEnter(MainMenuState::CreateGame), create_game::setup)
             .add_systems(OnEnter(MainMenuState::JoinGame), join_game::setup)
             .add_systems(OnEnter(MainMenuState::Lobby), lobby::setup)
-            .add_systems(OnEnter(MainMenuState::None), cleanup::<main::OnMainMenu>);
+            // Cleanup
+            .add_systems(OnExit(MainMenuState::Main), cleanup::<main::OnMainMenu>)
+            .add_systems(
+                OnExit(MainMenuState::CreateGame),
+                cleanup::<create_game::OnCreateGameScreen>,
+            );
     }
 }
 
@@ -30,12 +36,13 @@ pub enum MainMenuState {
 
 mod main {
     use bevy::{app::AppExit, prelude::*};
+    use durak_lib::network::CreateGameData;
 
-    use crate::GameScreen;
+    use crate::{network::CreateGameRequest, GameScreen};
 
     use super::MainMenuState;
 
-    pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    pub fn setup(mut commands: Commands) {
         let button_style = Style {
             width: Val::Px(250.0),
             height: Val::Px(65.0),
@@ -50,8 +57,8 @@ mod main {
             ..default()
         };
 
-        let mut container = commands.spawn(
-            (NodeBundle {
+        let mut container = commands.spawn((
+            NodeBundle {
                 style: Style {
                     width: Val::Percent(100.),
                     height: Val::Percent(100.),
@@ -62,8 +69,9 @@ mod main {
                     ..default()
                 },
                 ..default()
-            }, OnMainMenu)
-        );
+            },
+            OnMainMenu,
+        ));
 
         container.with_children(|parent| {
             parent
@@ -72,7 +80,7 @@ mod main {
                         style: button_style.clone(),
                         ..default()
                     },
-                    MenuButtonAction::Create,
+                    MenuButtonAction::GoToCreate,
                 ))
                 .with_children(|button| {
                     button.spawn(TextBundle::from_section("Create", text_style.clone()));
@@ -86,7 +94,7 @@ mod main {
                         style: button_style.clone(),
                         ..default()
                     },
-                    MenuButtonAction::Join,
+                    MenuButtonAction::GoToJoin,
                 ))
                 .with_children(|button| {
                     button.spawn(TextBundle::from_section("Join", text_style.clone()));
@@ -109,6 +117,7 @@ mod main {
     }
 
     pub fn menu_action(
+        mut commands: Commands,
         interaction_query: Query<
             (&Interaction, &MenuButtonAction),
             (Changed<Interaction>, With<Button>),
@@ -120,18 +129,33 @@ mod main {
         for (interaction, action) in interaction_query.iter() {
             if *interaction == Interaction::Pressed {
                 match action {
-                    MenuButtonAction::Create => todo!(),
-                    MenuButtonAction::Join => todo!(),
+                    MenuButtonAction::GoToCreate => {
+                        menu_state.0 = Some(MainMenuState::CreateGame);
+                    }
+                    MenuButtonAction::Create { password } => {
+                        let query = CreateGameData {
+                            password: password.clone(),
+                        };
+                        commands.spawn(CreateGameRequest(query));
+                    }
+                    MenuButtonAction::GoToJoin => {
+                        menu_state.0 = Some(MainMenuState::JoinGame);
+                    }
+                    MenuButtonAction::GoToMainMenu => {
+                        menu_state.0 = Some(MainMenuState::Main);
+                    }
                     MenuButtonAction::Quit => exit.send(AppExit),
                 }
             }
         }
     }
 
-    #[derive(Debug, Clone, Copy, Component)]
+    #[derive(Debug, Component)]
     pub enum MenuButtonAction {
-        Create,
-        Join,
+        GoToCreate,
+        Create { password: String },
+        GoToJoin,
+        GoToMainMenu,
         Quit,
     }
 
@@ -143,19 +167,85 @@ mod main {
 mod create_game {
     use bevy::prelude::*;
 
-    pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {}
+    use super::main::MenuButtonAction;
+
+    pub fn setup(mut commands: Commands) {
+        let button_style = Style {
+            width: Val::Px(250.0),
+            height: Val::Px(65.0),
+            margin: UiRect::all(Val::Px(20.0)),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
+            ..default()
+        };
+        let text_style = TextStyle {
+            font_size: 40.0,
+            color: Color::rgb(0.9, 0.9, 0.9),
+            ..default()
+        };
+
+        let mut container = commands.spawn((
+            NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.),
+                    height: Val::Percent(100.),
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    row_gap: Val::Px(20.),
+                    ..default()
+                },
+                ..default()
+            },
+            OnCreateGameScreen,
+        ));
+
+        container.with_children(|parent| {
+            parent
+                .spawn((
+                    ButtonBundle {
+                        style: button_style.clone(),
+                        ..default()
+                    },
+                    MenuButtonAction::Create {
+                        password: String::from("password"),
+                    },
+                ))
+                .with_children(|button| {
+                    button.spawn(TextBundle::from_section("Create", text_style.clone()));
+                });
+        });
+
+        container.with_children(|parent| {
+            parent
+                .spawn((
+                    ButtonBundle {
+                        style: button_style.clone(),
+                        ..default()
+                    },
+                    MenuButtonAction::GoToMainMenu,
+                ))
+                .with_children(|button| {
+                    button.spawn(TextBundle::from_section("Return", text_style.clone()));
+                });
+        });
+    }
+
+    /// Marker component used for cleanup.
+    #[derive(Debug, Clone, Copy, Component)]
+    pub struct OnCreateGameScreen;
 }
 
 mod join_game {
     use bevy::prelude::*;
 
-    pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {}
+    pub fn setup(mut commands: Commands) {}
 }
 
 mod lobby {
     use bevy::prelude::*;
 
-    pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {}
+    pub fn setup(mut commands: Commands) {}
 }
 
 fn button_system(
