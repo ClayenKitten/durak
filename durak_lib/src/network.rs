@@ -33,7 +33,7 @@ pub struct AuthHeader {
 }
 
 /// Query parameters used to create new game.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateGameData {
     pub password: String,
 }
@@ -60,7 +60,7 @@ impl IntoResponse for CreateGameResponce {
 }
 
 /// Query parameters used to join created game.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct JoinGameData {
     pub id: GameId,
     pub password: String,

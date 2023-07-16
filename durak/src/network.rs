@@ -21,7 +21,8 @@ impl Plugin for NetworkPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_plugins(ReqwestPlugin)
             .init_resource::<ReqwestClient>()
-            .add_plugins(RequestPlugin::<CreateGameRequest>::new());
+            .add_plugins(RequestPlugin::<CreateGameRequest>::new())
+            .add_plugins(RequestPlugin::<JoinGameRequest>::new());
     }
 }
 

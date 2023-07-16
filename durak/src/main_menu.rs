@@ -18,12 +18,22 @@ impl Plugin for MainMenuPlugin {
             .add_systems(OnEnter(MainMenuState::JoinGame), join_game::setup)
             .add_systems(OnEnter(MainMenuState::Lobby), lobby::setup)
             // Update
-            .add_systems(Update, create_game::on_creation)
+            .add_systems(
+                Update,
+                (
+                    create_game::on_creation.run_if(in_state(MainMenuState::CreateGame)),
+                    join_game::on_join.run_if(in_state(MainMenuState::JoinGame)),
+                ),
+            )
             // Cleanup
             .add_systems(OnExit(MainMenuState::Main), cleanup::<main::OnMainMenu>)
             .add_systems(
                 OnExit(MainMenuState::CreateGame),
                 cleanup::<create_game::OnCreateGameScreen>,
+            )
+            .add_systems(
+                OnExit(MainMenuState::JoinGame),
+                cleanup::<join_game::OnJoinGameScreen>,
             )
             .add_systems(
                 OnExit(MainMenuState::Lobby),
@@ -44,9 +54,15 @@ pub enum MainMenuState {
 
 mod main {
     use bevy::{app::AppExit, prelude::*};
-    use durak_lib::network::CreateGameData;
+    use durak_lib::{
+        common::GameId,
+        network::{CreateGameData, JoinGameData},
+    };
 
-    use crate::{network::CreateGameRequest, GameScreen};
+    use crate::{
+        network::{CreateGameRequest, JoinGameRequest},
+        GameScreen,
+    };
 
     use super::{spawn_button, MainMenuState};
 
@@ -99,6 +115,13 @@ mod main {
                     MenuButtonAction::GoToJoin => {
                         menu_state.0 = Some(MainMenuState::JoinGame);
                     }
+                    MenuButtonAction::Join { id, password } => {
+                        let query = JoinGameData {
+                            id: *id,
+                            password: password.clone(),
+                        };
+                        commands.spawn(JoinGameRequest(query));
+                    }
                     MenuButtonAction::GoToMainMenu => {
                         menu_state.0 = Some(MainMenuState::Main);
                     }
@@ -117,6 +140,7 @@ mod main {
         GoToCreate,
         Create { password: String },
         GoToJoin,
+        Join { id: GameId, password: String },
         GoToMainMenu,
         StartTheGame,
         Quit,
@@ -179,8 +203,54 @@ mod create_game {
 
 mod join_game {
     use bevy::prelude::*;
+    use durak_lib::common::GameId;
 
-    pub fn setup(mut commands: Commands) {}
+    use crate::network::{JoinGameRequest, OnResponce};
+
+    use super::{main::MenuButtonAction, spawn_button, MainMenuState};
+
+    pub fn setup(mut commands: Commands) {
+        let mut container = commands.spawn((
+            NodeBundle {
+                style: Style {
+                    width: Val::Percent(100.),
+                    height: Val::Percent(100.),
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::Center,
+                    justify_content: JustifyContent::Center,
+                    row_gap: Val::Px(20.),
+                    ..default()
+                },
+                ..default()
+            },
+            OnJoinGameScreen,
+        ));
+
+        container.with_children(|parent| {
+            spawn_button(
+                parent,
+                "Join",
+                MenuButtonAction::Join {
+                    id: GameId::new(0),
+                    password: String::from("password"),
+                },
+            );
+            spawn_button(parent, "Return", MenuButtonAction::GoToMainMenu);
+        });
+    }
+
+    pub fn on_join(
+        mut state: ResMut<NextState<MainMenuState>>,
+        mut event_reader: EventReader<OnResponce<JoinGameRequest>>,
+    ) {
+        for OnResponce(responce) in event_reader.iter() {
+            state.0 = Some(MainMenuState::Lobby);
+        }
+    }
+
+    /// Marker component used for cleanup.
+    #[derive(Debug, Clone, Copy, Component)]
+    pub struct OnJoinGameScreen;
 }
 
 mod lobby {
