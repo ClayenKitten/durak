@@ -12,7 +12,7 @@ use durak_lib::{
 };
 
 use crate::{
-    network::{CreateGameRequest, JoinGameRequest, OnResponce},
+    network::{CreateGameRequest, JoinGameRequest, LeaveGameRequest, OnResponce},
     ui_utils::BigTextInput,
     GameScreen,
 };
@@ -24,10 +24,15 @@ impl Plugin for MainMenuPlugin {
         app.init_resource::<MenuState>().add_systems(
             Update,
             (
-                on_create_response.before(display_main_menu),
-                on_join_response.before(display_main_menu),
-                display_main_menu,
+                (on_create_response, on_join_response),
+                (
+                    display_main_menu
+                        .run_if(not(resource_equals(MenuState::None)))
+                        .run_if(not(resource_equals(MenuState::Lobby))),
+                    display_lobby.run_if(resource_equals(MenuState::Lobby)),
+                ),
             )
+                .chain()
                 .run_if(in_state(GameScreen::MainMenu)),
         );
     }
@@ -44,22 +49,16 @@ enum MenuState {
         id: String,
         password: String,
     },
-    Lobby {
-        id: Option<GameId>,
-    },
+    Lobby,
     None,
 }
 
 fn display_main_menu(
     mut ctx: EguiContexts,
     commands: Commands,
-    next_game_state: ResMut<NextState<GameScreen>>,
     exit: EventWriter<AppExit>,
     mut menu_state: ResMut<MenuState>,
 ) {
-    if menu_state.as_ref() == &MenuState::None {
-        return;
-    }
     let mut next_state: Option<MenuState> = None;
     let ctx = ctx.ctx_mut();
     CentralPanel::default()
@@ -90,15 +89,7 @@ fn display_main_menu(
                             MenuState::JoinGame { id, password } => {
                                 join_game(ui, commands, id, password, &mut next_state);
                             }
-                            MenuState::Lobby { id } => {
-                                lobby(
-                                    ui,
-                                    &mut next_state,
-                                    next_game_state,
-                                    *id,
-                                    vec![PlayerId::new(0), PlayerId::new(1)],
-                                );
-                            }
+                            MenuState::Lobby => unreachable!(),
                             MenuState::None => unreachable!(),
                         });
                     },
@@ -169,7 +160,7 @@ fn create_game(
                 commands.spawn(CreateGameRequest(CreateGameData {
                     password: password.clone(),
                 }));
-                *next_state = Some(MenuState::Lobby { id: None });
+                *next_state = Some(MenuState::Lobby);
             }
         });
     });
@@ -181,7 +172,7 @@ fn on_create_response(
     mut menu_state: ResMut<MenuState>,
 ) {
     match menu_state.as_ref() {
-        MenuState::Lobby { id: None } => {}
+        MenuState::Lobby => {}
         _ => return,
     }
 
@@ -197,7 +188,7 @@ fn on_create_response(
                     player_id: *player_id,
                     token: *token,
                 });
-                *menu_state = MenuState::Lobby { id: Some(*game_id) };
+                *menu_state = MenuState::Lobby;
             }
         }
         break;
@@ -243,7 +234,7 @@ fn join_game(
                 id,
                 password: password.clone(),
             }));
-            *next_state = Some(MenuState::Lobby { id: None });
+            *next_state = Some(MenuState::Lobby);
         }
     });
 }
@@ -254,7 +245,7 @@ fn on_join_response(
     mut menu_state: ResMut<MenuState>,
 ) {
     match menu_state.as_ref() {
-        MenuState::Lobby { id: None } => {}
+        MenuState::Lobby => {}
         _ => return,
     }
 
@@ -270,7 +261,7 @@ fn on_join_response(
                     player_id: *player_id,
                     token: *token,
                 });
-                *menu_state = MenuState::Lobby { id: Some(*game_id) };
+                *menu_state = MenuState::Lobby;
             }
             _ => {
                 *menu_state = MenuState::MainMenu;
@@ -280,29 +271,37 @@ fn on_join_response(
     }
 }
 
-fn lobby(
-    ui: &mut Ui,
-    next_state: &mut Option<MenuState>,
+fn display_lobby(
+    mut ctx: EguiContexts,
+    mut commands: Commands,
+    mut menu_state: ResMut<MenuState>,
     mut next_game_state: ResMut<NextState<GameScreen>>,
-    game_id: Option<GameId>,
-    players: Vec<PlayerId>,
+    auth: Option<Res<AuthHeader>>,
 ) {
-    match game_id {
+    let players = vec![PlayerId(0), PlayerId(1)];
+    let ctx = ctx.ctx_mut();
+
+    match auth {
         None => {
-            ui.centered_and_justified(|ui| ui.label("Waiting for server..."));
+            CentralPanel::default().show(ctx, |ui| {
+                for (_, font_id) in ui.style_mut().text_styles.iter_mut() {
+                    font_id.size = 30.;
+                }
+                ui.centered_and_justified(|ui| ui.label("Waiting for server..."));
+            });
         }
-        Some(id) => {
-            let outer_margin = Margin {
-                left: -MARGIN,
-                right: -MARGIN,
-                top: 0.,
-                bottom: 0.,
-            };
-            ui.vertical_centered_justified(|ui| {
-                Frame::none()
-                    .fill(Color32::from_gray(15))
-                    .outer_margin(outer_margin)
-                    .show(ui, |ui| {
+        Some(auth) => {
+            let AuthHeader {
+                game_id,
+                player_id,
+                token,
+            } = auth.as_ref();
+            CentralPanel::default().show(ctx, |ui| {
+                for (_, font_id) in ui.style_mut().text_styles.iter_mut() {
+                    font_id.size = 30.;
+                }
+                ui.vertical_centered_justified(|ui| {
+                    Frame::none().fill(Color32::from_gray(15)).show(ui, |ui| {
                         let (rect, _) = ui.allocate_exact_size(
                             Vec2::new(ui.available_width(), 75.),
                             Sense::hover(),
@@ -311,45 +310,52 @@ fn lobby(
                             ui.with_layout(
                                 Layout::centered_and_justified(Direction::TopDown),
                                 |ui| {
-                                    ui.label(format!("Game #{id}"));
+                                    ui.label(format!("Game #{game_id}"));
                                 },
                             );
                         });
                     });
-                Frame::none().outer_margin(outer_margin).show(ui, |ui| {
-                    let (rect, _) = ui.allocate_exact_size(
-                        Vec2::new(
-                            ui.available_width(),
-                            ui.available_height() - BUTTON_SIZE.y - MARGIN * 2.,
-                        ),
-                        Sense::click(),
-                    );
-                    ui.allocate_ui_at_rect(rect, |ui| {
-                        for player in players.iter() {
-                            player_entry(ui, *player, true);
-                        }
-                    });
-                });
-                Frame::none()
-                    .fill(Color32::from_gray(15))
-                    .outer_margin(outer_margin)
-                    .inner_margin(MARGIN)
-                    .show(ui, |ui| {
-                        ui.allocate_ui_with_layout(
-                            Vec2::new(ui.available_width(), BUTTON_SIZE.y),
-                            Layout::left_to_right(Align::Center),
-                            |ui| {
-                                if ui.add(Button::new("Leave").min_size(BUTTON_SIZE)).clicked() {
-                                    *next_state = Some(MenuState::MainMenu);
-                                }
-                                ui.add_space(ui.available_width() - BUTTON_SIZE.x);
-                                if ui.add(Button::new("Start").min_size(BUTTON_SIZE)).clicked() {
-                                    *next_state = Some(MenuState::None);
-                                    next_game_state.0 = Some(GameScreen::RoundSetup);
-                                }
-                            },
+                    Frame::none().show(ui, |ui| {
+                        let (rect, _) = ui.allocate_exact_size(
+                            Vec2::new(
+                                ui.available_width(),
+                                ui.available_height() - BUTTON_SIZE.y - MARGIN * 2.,
+                            ),
+                            Sense::click(),
                         );
+                        ui.allocate_ui_at_rect(rect, |ui| {
+                            for player in players.iter() {
+                                player_entry(ui, *player, true);
+                            }
+                        });
                     });
+                    Frame::none()
+                        .fill(Color32::from_gray(15))
+                        .inner_margin(MARGIN)
+                        .show(ui, |ui| {
+                            ui.allocate_ui_with_layout(
+                                Vec2::new(ui.available_width(), BUTTON_SIZE.y),
+                                Layout::left_to_right(Align::Center),
+                                |ui| {
+                                    if ui.add(Button::new("Leave").min_size(BUTTON_SIZE)).clicked()
+                                    {
+                                        commands.spawn(LeaveGameRequest(AuthHeader {
+                                            game_id: *game_id,
+                                            player_id: *player_id,
+                                            token: *token,
+                                        }));
+                                        *menu_state = MenuState::MainMenu;
+                                    }
+                                    ui.add_space(ui.available_width() - BUTTON_SIZE.x);
+                                    if ui.add(Button::new("Start").min_size(BUTTON_SIZE)).clicked()
+                                    {
+                                        next_game_state.0 = Some(GameScreen::RoundSetup);
+                                        *menu_state = MenuState::None;
+                                    }
+                                },
+                            );
+                        });
+                });
             });
         }
     };
