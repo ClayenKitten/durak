@@ -59,7 +59,7 @@ fn send_request<R: MyRequest + Component>(
     for (entity, request) in requests.iter() {
         let mut builder = client
             .0
-            .request(Method::POST, request.url())
+            .request(request.method(), request.url())
             .headers(request.headers());
         if let Some(ref query) = request.query() {
             builder = builder.query(query);
@@ -99,6 +99,8 @@ pub trait MyRequest {
 
     /// Type that will be serialized into query params.
     type Query: Serialize;
+
+    fn method(&self) -> Method;
 
     fn url(&self) -> Url;
 

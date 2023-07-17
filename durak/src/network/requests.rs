@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_mod_reqwest::reqwest::{
     header::{HeaderMap, AUTHORIZATION},
-    Url,
+    Method, Url,
 };
 use durak_lib::network::{
     AuthHeader, CreateGameData, CreateGameResponce, JoinGameData, JoinGameResponce,
@@ -16,6 +16,10 @@ impl MyRequest for CreateGameRequest {
     type Responce = CreateGameResponce;
 
     type Query = [(&'static str, String); 1];
+
+    fn method(&self) -> Method {
+        Method::POST
+    }
 
     fn url(&self) -> Url {
         let url = format!("{}/create", Self::URL);
@@ -34,6 +38,10 @@ impl MyRequest for JoinGameRequest {
     type Responce = JoinGameResponce;
 
     type Query = [(&'static str, String); 2];
+
+    fn method(&self) -> Method {
+        Method::POST
+    }
 
     fn url(&self) -> Url {
         let url = format!("{}/join", Self::URL);
@@ -55,6 +63,10 @@ impl MyRequest for LeaveGameRequest {
     type Responce = ();
 
     type Query = ();
+
+    fn method(&self) -> Method {
+        Method::POST
+    }
 
     fn url(&self) -> Url {
         let url = format!("{}/game/leave", Self::URL);
