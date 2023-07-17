@@ -1,5 +1,8 @@
 //! Request and responce data structures used by both server and client.
 
+#[cfg(feature = "bevy")]
+use bevy_ecs::prelude::Resource;
+
 #[cfg(feature = "axum")]
 use axum::{
     http::StatusCode,
@@ -26,6 +29,7 @@ impl Token {
 ///
 /// Should be encoded as json.
 #[derive(Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(Resource))]
 pub struct AuthHeader {
     pub game_id: GameId,
     pub player_id: PlayerId,
@@ -70,7 +74,7 @@ pub struct JoinGameData {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum JoinGameResponce {
     /// Joined successfully.
-    Ok { player_id: PlayerId, token: Token },
+    Ok { game_id: GameId, player_id: PlayerId, token: Token },
     /// Game with provided id doesn't exist.
     NotFound,
     /// Password doesn't match.

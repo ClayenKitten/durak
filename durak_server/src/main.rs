@@ -83,6 +83,7 @@ async fn join_game(
         Ok(player_id) => {
             tracing::debug!("joined game `{}`", data.id);
             JoinGameResponce::Ok {
+                game_id: data.id,
                 player_id,
                 token: auth.generate_token(data.id, player_id),
             }
