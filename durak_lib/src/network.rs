@@ -1,5 +1,7 @@
 //! Request and responce data structures used by both server and client.
 
+use http::HeaderValue;
+
 #[cfg(feature = "bevy")]
 use bevy_ecs::prelude::Resource;
 
@@ -34,6 +36,13 @@ pub struct AuthHeader {
     pub game_id: GameId,
     pub player_id: PlayerId,
     pub token: Token,
+}
+
+impl AuthHeader {
+    pub fn into_header(&self) -> HeaderValue {
+        let s = serde_json::to_string(&self).unwrap();
+        HeaderValue::from_str(s.as_str()).unwrap()
+    }
 }
 
 /// Query parameters used to create new game.

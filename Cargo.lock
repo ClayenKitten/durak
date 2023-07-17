@@ -1565,6 +1565,7 @@ version = "0.1.0"
 dependencies = [
  "axum",
  "bevy_ecs",
+ "http",
  "serde",
  "serde_json",
  "strum",
