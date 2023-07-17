@@ -7,6 +7,7 @@ mod round_setup;
 mod ui_utils;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
+use bevy_egui::EguiPlugin;
 use card::CardInteractionPlugin;
 use main_menu::MainMenuPlugin;
 use network::NetworkPlugin;
@@ -84,6 +85,7 @@ fn main() {
                     ..default()
                 }),
         )
+        .add_plugins(EguiPlugin)
         .add_state::<GameScreen>()
         .add_plugins(MainMenuPlugin)
         .add_plugins(RoundSetupPlugin)

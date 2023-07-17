@@ -1,499 +1,220 @@
-use bevy::prelude::*;
+use bevy::{app::AppExit, prelude::*};
+use bevy_egui::{
+    egui::{Button, CentralPanel, RichText, Ui, Vec2},
+    EguiContexts,
+};
+use durak_lib::{
+    common::{GameId, PlayerId},
+    network::{CreateGameData, JoinGameData},
+};
 
-use self::main::MenuButtonAction;
+use crate::{
+    network::{CreateGameRequest, JoinGameRequest},
+    ui_utils::BigTextInput,
+    GameScreen,
+};
 
 pub struct MainMenuPlugin;
 
 impl Plugin for MainMenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_state::<MainMenuState>()
-            .add_systems(Update, button_system)
-            .add_systems(
-                Update,
-                main::menu_action.run_if(not(in_state(MainMenuState::None))),
-            )
-            // Setup
-            .add_systems(OnEnter(MainMenuState::Main), main::setup)
-            .add_systems(OnEnter(MainMenuState::CreateGame), create_game::setup)
-            .add_systems(OnEnter(MainMenuState::JoinGame), join_game::setup)
-            .add_systems(OnEnter(MainMenuState::Lobby), lobby::setup)
-            // Update
-            .add_systems(
-                Update,
-                (
-                    create_game::on_creation.run_if(in_state(MainMenuState::CreateGame)),
-                    join_game::on_join.run_if(in_state(MainMenuState::JoinGame)),
-                ),
-            )
-            // Cleanup
-            .add_systems(OnExit(MainMenuState::Main), cleanup::<main::OnMainMenu>)
-            .add_systems(
-                OnExit(MainMenuState::CreateGame),
-                cleanup::<create_game::OnCreateGameScreen>,
-            )
-            .add_systems(
-                OnExit(MainMenuState::JoinGame),
-                cleanup::<join_game::OnJoinGameScreen>,
-            )
-            .add_systems(
-                OnExit(MainMenuState::Lobby),
-                cleanup::<lobby::OnLobbyScreen>,
-            );
+        app.init_resource::<MenuState>().add_systems(
+            Update,
+            display_main_menu.run_if(in_state(GameScreen::MainMenu)),
+        );
     }
 }
 
-#[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub enum MainMenuState {
+#[derive(Resource, Debug, Clone, PartialEq, Eq, Hash, Default)]
+enum MenuState {
     #[default]
-    Main,
-    CreateGame,
-    JoinGame,
-    Lobby,
+    MainMenu,
+    CreateGame {
+        password: String,
+    },
+    JoinGame {
+        id: String,
+        password: String,
+    },
+    Lobby {
+        id: Option<GameId>,
+    },
     None,
 }
 
-mod main {
-    use bevy::{app::AppExit, prelude::*};
-    use durak_lib::{
-        common::GameId,
-        network::{CreateGameData, JoinGameData},
-    };
-
-    use crate::{
-        network::{CreateGameRequest, JoinGameRequest},
-        GameScreen,
-    };
-
-    use super::{spawn_button, MainMenuState};
-
-    pub fn setup(mut commands: Commands) {
-        let mut container = commands.spawn((
-            NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.),
-                    height: Val::Percent(100.),
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    row_gap: Val::Px(20.),
-                    ..default()
-                },
-                ..default()
-            },
-            OnMainMenu,
-        ));
-
-        container.with_children(|parent| {
-            spawn_button(parent, "Create", MenuButtonAction::GoToCreate);
-            spawn_button(parent, "Join", MenuButtonAction::GoToJoin);
-            spawn_button(parent, "Quit", MenuButtonAction::Quit);
-        });
-    }
-
-    pub fn menu_action(
-        mut commands: Commands,
-        interaction_query: Query<
-            (&Interaction, &MenuButtonAction),
-            (Changed<Interaction>, With<Button>),
-        >,
-        mut game_state: ResMut<NextState<GameScreen>>,
-        mut menu_state: ResMut<NextState<MainMenuState>>,
-        mut exit: EventWriter<AppExit>,
-    ) {
-        for (interaction, action) in interaction_query.iter() {
-            if *interaction == Interaction::Pressed {
-                match action {
-                    MenuButtonAction::GoToCreate => {
-                        menu_state.0 = Some(MainMenuState::CreateGame);
-                    }
-                    MenuButtonAction::Create { password } => {
-                        let query = CreateGameData {
-                            password: password.clone(),
-                        };
-                        commands.spawn(CreateGameRequest(query));
-                    }
-                    MenuButtonAction::GoToJoin => {
-                        menu_state.0 = Some(MainMenuState::JoinGame);
-                    }
-                    MenuButtonAction::Join { id, password } => {
-                        let query = JoinGameData {
-                            id: *id,
-                            password: password.clone(),
-                        };
-                        commands.spawn(JoinGameRequest(query));
-                    }
-                    MenuButtonAction::GoToMainMenu => {
-                        menu_state.0 = Some(MainMenuState::Main);
-                    }
-                    MenuButtonAction::StartTheGame => {
-                        menu_state.0 = Some(MainMenuState::None);
-                        game_state.0 = Some(GameScreen::RoundSetup);
-                    }
-                    MenuButtonAction::Quit => exit.send(AppExit),
-                }
-            }
-        }
-    }
-
-    #[derive(Debug, Component)]
-    pub enum MenuButtonAction {
-        GoToCreate,
-        Create { password: String },
-        GoToJoin,
-        Join { id: GameId, password: String },
-        GoToMainMenu,
-        StartTheGame,
-        Quit,
-    }
-
-    /// Marker component used for cleanup.
-    #[derive(Debug, Clone, Copy, Component)]
-    pub struct OnMainMenu;
-}
-
-mod create_game {
-    use bevy::prelude::*;
-
-    use crate::network::{CreateGameRequest, OnResponce};
-
-    use super::{main::MenuButtonAction, spawn_button, MainMenuState};
-
-    pub fn setup(mut commands: Commands) {
-        let mut container = commands.spawn((
-            NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.),
-                    height: Val::Percent(100.),
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    row_gap: Val::Px(20.),
-                    ..default()
-                },
-                ..default()
-            },
-            OnCreateGameScreen,
-        ));
-
-        container.with_children(|parent| {
-            spawn_button(
-                parent,
-                "Create",
-                MenuButtonAction::Create {
-                    password: String::from("password"),
-                },
-            );
-            spawn_button(parent, "Return", MenuButtonAction::GoToMainMenu);
-        });
-    }
-
-    pub fn on_creation(
-        mut state: ResMut<NextState<MainMenuState>>,
-        mut event_reader: EventReader<OnResponce<CreateGameRequest>>,
-    ) {
-        for OnResponce(responce) in event_reader.iter() {
-            state.0 = Some(MainMenuState::Lobby);
-        }
-    }
-
-    /// Marker component used for cleanup.
-    #[derive(Debug, Clone, Copy, Component)]
-    pub struct OnCreateGameScreen;
-}
-
-mod join_game {
-    use bevy::prelude::*;
-    use durak_lib::common::GameId;
-
-    use crate::network::{JoinGameRequest, OnResponce};
-
-    use super::{main::MenuButtonAction, spawn_button, MainMenuState};
-
-    pub fn setup(mut commands: Commands) {
-        let mut container = commands.spawn((
-            NodeBundle {
-                style: Style {
-                    width: Val::Percent(100.),
-                    height: Val::Percent(100.),
-                    flex_direction: FlexDirection::Column,
-                    align_items: AlignItems::Center,
-                    justify_content: JustifyContent::Center,
-                    row_gap: Val::Px(20.),
-                    ..default()
-                },
-                ..default()
-            },
-            OnJoinGameScreen,
-        ));
-
-        container.with_children(|parent| {
-            spawn_button(
-                parent,
-                "Join",
-                MenuButtonAction::Join {
-                    id: GameId::new(0),
-                    password: String::from("password"),
-                },
-            );
-            spawn_button(parent, "Return", MenuButtonAction::GoToMainMenu);
-        });
-    }
-
-    pub fn on_join(
-        mut state: ResMut<NextState<MainMenuState>>,
-        mut event_reader: EventReader<OnResponce<JoinGameRequest>>,
-    ) {
-        for OnResponce(responce) in event_reader.iter() {
-            state.0 = Some(MainMenuState::Lobby);
-        }
-    }
-
-    /// Marker component used for cleanup.
-    #[derive(Debug, Clone, Copy, Component)]
-    pub struct OnJoinGameScreen;
-}
-
-mod lobby {
-    use bevy::prelude::*;
-    use durak_lib::common::PlayerId;
-
-    use crate::ui_utils::Colors;
-
-    use super::{main::MenuButtonAction, spawn_button};
-
-    pub fn setup(mut commands: Commands) {
-        commands
-            .spawn((
-                NodeBundle {
-                    style: Style {
-                        width: Val::Percent(100.),
-                        height: Val::Percent(100.),
-                        flex_direction: FlexDirection::Column,
-                        align_items: AlignItems::Center,
-                        justify_content: JustifyContent::Center,
-                        ..default()
-                    },
-                    ..default()
-                },
-                OnLobbyScreen,
-            ))
-            .with_children(|parent| {
-                parent
-                    .spawn(NodeBundle {
-                        style: Style {
-                            width: Val::Percent(100.),
-                            height: Val::Px(100.),
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            ..default()
-                        },
-                        background_color: Colors::PRIMARY.into(),
-                        ..default()
-                    })
-                    .with_children(|parent| {
-                        parent.spawn(TextBundle {
-                            text: Text::from_section(
-                                "Game #124252115",
-                                TextStyle {
-                                    font_size: 40.,
-                                    color: Colors::TEXT,
-                                    ..default()
-                                },
-                            ),
-                            ..default()
-                        });
-                    });
-                parent
-                    .spawn(NodeBundle {
-                        style: Style {
-                            flex_grow: 1.,
-                            flex_direction: FlexDirection::Column,
-                            width: Val::Percent(100.),
-                            height: Val::Auto,
-                            border: UiRect::all(Val::Px(10.)),
-                            row_gap: Val::Px(10.),
-                            ..default()
-                        },
-                        ..default()
-                    })
-                    .with_children(|parent| {
-                        spawn_player_entry(parent, PlayerId::new(0), true);
-                        spawn_player_entry(parent, PlayerId::new(1), false);
-                        spawn_player_entry(parent, PlayerId::new(2), false);
-                        spawn_player_entry(parent, PlayerId::new(3), false);
-                    });
-                parent
-                    .spawn(NodeBundle {
-                        style: Style {
-                            width: Val::Percent(100.),
-                            height: Val::Auto,
-                            justify_content: JustifyContent::SpaceBetween,
-                            ..default()
-                        },
-                        background_color: Colors::PRIMARY.into(),
-                        ..default()
-                    })
-                    .with_children(|parent| {
-                        spawn_button(parent, "Leave", MenuButtonAction::GoToMainMenu);
-                        spawn_button(parent, "Start", MenuButtonAction::StartTheGame);
-                    });
-            });
-
-        fn spawn_player_entry(parent: &mut ChildBuilder, player: PlayerId, is_host: bool) {
-            parent
-                .spawn(NodeBundle {
-                    style: Style {
-                        width: Val::Percent(100.),
-                        height: Val::Px(100.),
-                        align_items: AlignItems::Center,
-                        ..default()
-                    },
-                    background_color: Colors::BACKGROUND.into(),
-                    ..default()
-                })
-                .with_children(|parent| {
-                    parent
-                        .spawn(NodeBundle {
-                            style: Style {
-                                height: Val::Percent(100.),
-                                aspect_ratio: Some(1.0),
-                                justify_content: JustifyContent::Center,
-                                align_items: AlignItems::Center,
-                                ..default()
-                            },
-                            background_color: Colors::PRIMARY.into(),
-                            ..default()
-                        })
-                        .with_children(|parent| {
-                            parent.spawn(TextBundle {
-                                text: Text::from_section(
-                                    player.to_string(),
-                                    TextStyle {
-                                        font_size: 40.,
-                                        color: Colors::TEXT,
-                                        ..default()
-                                    },
-                                ),
-                                ..default()
-                            });
-                        });
-
-                    parent
-                        .spawn(NodeBundle {
-                            style: Style {
-                                width: Val::Percent(100.),
-                                height: Val::Percent(100.),
-                                align_items: AlignItems::Center,
-                                padding: UiRect::left(Val::Px(20.)),
-                                ..default()
-                            },
-                            ..default()
-                        })
-                        .with_children(|parent| {
-                            parent.spawn(TextBundle {
-                                text: Text::from_section(
-                                    format!("Player #{}", player),
-                                    TextStyle {
-                                        font_size: 40.,
-                                        color: Colors::TEXT,
-                                        ..default()
-                                    },
-                                ),
-                                ..default()
-                            });
-                        });
-
-                    if is_host {
-                        parent
-                            .spawn(NodeBundle {
-                                style: Style {
-                                    height: Val::Percent(100.),
-                                    aspect_ratio: Some(1.0),
-                                    justify_content: JustifyContent::Center,
-                                    align_items: AlignItems::Center,
-                                    ..default()
-                                },
-                                background_color: Colors::PRIMARY.into(),
-                                ..default()
-                            })
-                            .with_children(|parent| {
-                                parent.spawn(TextBundle {
-                                    text: Text::from_section(
-                                        "Host",
-                                        TextStyle {
-                                            font_size: 40.,
-                                            color: Colors::TEXT,
-                                            ..default()
-                                        },
-                                    ),
-                                    ..default()
-                                });
-                            });
-                    }
-                });
-        }
-    }
-
-    /// Marker component used for cleanup.
-    #[derive(Debug, Clone, Copy, Component)]
-    pub struct OnLobbyScreen;
-}
-
-fn button_system(
-    mut interaction_query: Query<
-        (&Interaction, &mut BackgroundColor),
-        (Changed<Interaction>, With<Button>),
-    >,
+fn display_main_menu(
+    mut ctx: EguiContexts,
+    commands: Commands,
+    next_game_state: ResMut<NextState<GameScreen>>,
+    exit: EventWriter<AppExit>,
+    mut menu_state: ResMut<MenuState>,
 ) {
-    const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
-    const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
-    const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
-
-    for (interaction, mut color) in &mut interaction_query {
-        match *interaction {
-            Interaction::Pressed => {
-                *color = PRESSED_BUTTON.into();
-            }
-            Interaction::Hovered => {
-                *color = HOVERED_BUTTON.into();
-            }
-            Interaction::None => {
-                *color = NORMAL_BUTTON.into();
-            }
+    if menu_state.as_ref() == &MenuState::None {
+        return;
+    }
+    let mut next_state: Option<MenuState> = None;
+    let ctx = ctx.ctx_mut();
+    CentralPanel::default().show(ctx, |ui| {
+        for (_, font_id) in ui.style_mut().text_styles.iter_mut() {
+            font_id.size = 30.;
         }
-    }
-}
-
-fn cleanup<T: Component>(mut commands: Commands, query: Query<Entity, With<T>>) {
-    for entity in query.iter() {
-        commands.entity(entity).despawn_recursive();
-    }
-}
-
-fn spawn_button(parent: &mut ChildBuilder, text: &str, action: MenuButtonAction) {
-    let button_style = Style {
-        width: Val::Px(250.0),
-        height: Val::Px(65.0),
-        margin: UiRect::all(Val::Px(20.0)),
-        justify_content: JustifyContent::Center,
-        align_items: AlignItems::Center,
-        ..default()
-    };
-    let text_style = TextStyle {
-        font_size: 40.0,
-        color: Color::rgb(0.9, 0.9, 0.9),
-        ..default()
-    };
-
-    parent
-        .spawn((
-            ButtonBundle {
-                style: button_style,
-                ..default()
-            },
-            action,
-        ))
-        .with_children(|button| {
-            button.spawn(TextBundle::from_section(text, text_style));
+        ui.horizontal_centered(|ui| {
+            ui.add_space(50.);
+            ui.allocate_ui(
+                Vec2 {
+                    x: ui.available_width() - 50.,
+                    y: ui.available_height(),
+                },
+                |ui| {
+                    ui.vertical(|ui| match menu_state.as_mut() {
+                        MenuState::MainMenu => {
+                            main_menu(ui, &mut next_state, exit);
+                        }
+                        MenuState::CreateGame { password } => {
+                            create_game(ui, commands, password, &mut next_state);
+                        }
+                        MenuState::JoinGame { id, password } => {
+                            join_game(ui, commands, id, password, &mut next_state);
+                        }
+                        MenuState::Lobby { id } => {
+                            lobby(
+                                ui,
+                                &mut next_state,
+                                next_game_state,
+                                *id,
+                                vec![PlayerId::new(0), PlayerId::new(1)],
+                            );
+                        }
+                        MenuState::None => unreachable!(),
+                    });
+                },
+            );
         });
+    });
+    if let Some(next_state) = next_state {
+        *menu_state = next_state;
+    }
+}
+
+const BUTTON_SIZE: Vec2 = Vec2::new(400., 100.);
+
+fn main_menu(ui: &mut Ui, next_state: &mut Option<MenuState>, mut exit: EventWriter<AppExit>) {
+    let height = ui.available_size().y / 2. - (100. * 3. + 50. * 2.) / 2.;
+    ui.add_space(height);
+
+    ui.vertical_centered(|ui| {
+        ui.style_mut().spacing.item_spacing = Vec2::new(0., 50.);
+
+        if ui
+            .add(Button::new("Create").min_size(BUTTON_SIZE))
+            .clicked()
+        {
+            *next_state = Some(MenuState::CreateGame {
+                password: String::new(),
+            });
+        }
+        if ui.add(Button::new("Join").min_size(BUTTON_SIZE)).clicked() {
+            *next_state = Some(MenuState::JoinGame {
+                id: String::new(),
+                password: String::new(),
+            });
+        }
+        if ui.add(Button::new("Quit").min_size(BUTTON_SIZE)).clicked() {
+            exit.send(AppExit);
+        }
+    });
+}
+
+fn create_game(
+    ui: &mut Ui,
+    mut commands: Commands,
+    password: &mut String,
+    next_state: &mut Option<MenuState>,
+) {
+    ui.add_space(50.);
+
+    ui.vertical_centered(|ui| {
+        ui.spacing_mut().item_spacing = Vec2::new(0., 10.);
+
+        ui.label(RichText::new("Password:").size(30.));
+        ui.add(BigTextInput::new(password));
+        ui.add_space(ui.available_height() - 150.);
+        ui.horizontal(|ui| {
+            if ui
+                .add(Button::new("Return").min_size(BUTTON_SIZE))
+                .clicked()
+            {
+                *next_state = Some(MenuState::MainMenu);
+            }
+            ui.add_space(ui.available_width() - BUTTON_SIZE.x);
+            if ui
+                .add(Button::new("Create").min_size(BUTTON_SIZE))
+                .clicked()
+            {
+                commands.spawn(CreateGameRequest(CreateGameData {
+                    password: password.clone(),
+                }));
+                *next_state = Some(MenuState::Lobby { id: None });
+            }
+        });
+    });
+}
+
+fn join_game(
+    ui: &mut Ui,
+    mut commands: Commands,
+    id: &mut String,
+    password: &mut String,
+    next_state: &mut Option<MenuState>,
+) {
+    ui.style_mut().spacing.item_spacing = Vec2::new(50., 50.);
+
+    ui.add_space(50.);
+    ui.columns(2, |columns| {
+        for column in columns.iter_mut() {
+            column.spacing_mut().item_spacing = Vec2::new(0., 10.);
+        }
+        columns[0].label("Id:");
+        columns[0].add(BigTextInput::new(id));
+        columns[1].label("Password:");
+        columns[1].add(BigTextInput::new(password));
+    });
+    ui.add_space(ui.available_height() - 150.);
+    ui.horizontal(|ui| {
+        if ui
+            .add(Button::new("Return").min_size(BUTTON_SIZE))
+            .clicked()
+        {
+            *next_state = Some(MenuState::MainMenu);
+        }
+
+        ui.add_space(ui.available_width() - BUTTON_SIZE.x);
+
+        if ui.add(Button::new("Join").min_size(BUTTON_SIZE)).clicked() {
+            let id = match id.parse::<u64>() {
+                Ok(id) => GameId::new(id),
+                Err(_) => return,
+            };
+            commands.spawn(JoinGameRequest(JoinGameData {
+                id,
+                password: password.clone(),
+            }));
+            *next_state = Some(MenuState::Lobby { id: None });
+        }
+    });
+}
+
+fn lobby(
+    ui: &mut Ui,
+    next_state: &mut Option<MenuState>,
+    next_game_state: ResMut<NextState<GameScreen>>,
+    game_id: Option<GameId>,
+    players: Vec<PlayerId>,
+) {
+    match game_id {
+        Some(id) => todo!(),
+        None => {
+            ui.centered_and_justified(|ui| ui.label("Waiting for server..."));
+        }
+    };
 }

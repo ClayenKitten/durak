@@ -1,10 +1,23 @@
-use bevy::prelude::Color;
+use bevy_egui::egui;
+use bevy_egui::egui::{Align, TextEdit, Vec2, Widget};
 
-pub struct Colors;
+pub struct BigTextInput<'t> {
+    text: &'t mut String,
+}
 
-impl Colors {
-    pub const PRIMARY: Color = Color::rgb(0.2, 0.2, 0.2);
-    pub const SECONDARY: Color = Color::rgb(0.5, 0.5, 0.5);
-    pub const BACKGROUND: Color = Color::rgb(0.5, 0.5, 0.5);
-    pub const TEXT: Color = Color::rgb(0.9, 0.9, 0.9);
+impl<'t> BigTextInput<'t> {
+    pub fn new(text: &'t mut String) -> Self {
+        Self { text }
+    }
+}
+
+impl Widget for BigTextInput<'_> {
+    fn ui(self, ui: &mut egui::Ui) -> egui::Response {
+        ui.add(
+            TextEdit::singleline(self.text)
+                .min_size(Vec2::new(400., 50.))
+                .vertical_align(Align::Center)
+                .horizontal_align(Align::Center),
+        )
+    }
 }
