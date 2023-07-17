@@ -62,6 +62,17 @@ impl Game {
         Some(id)
     }
 
+    /// Removes player from the game.
+    /// 
+    /// Returns `true` if removed successfully.
+    pub fn remove_player(&mut self, player_id: PlayerId) -> bool {
+        let Some(index) = self.players.iter().position(|p| p.id == player_id) else {
+            return false;
+        };
+        self.players.remove(index);
+        true
+    }
+
     /// Starts the game.
     ///
     /// Deck is shuffled and cards are dealed.

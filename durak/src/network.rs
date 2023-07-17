@@ -22,7 +22,8 @@ impl Plugin for NetworkPlugin {
         app.add_plugins(ReqwestPlugin)
             .init_resource::<ReqwestClient>()
             .add_plugins(RequestPlugin::<CreateGameRequest>::new())
-            .add_plugins(RequestPlugin::<JoinGameRequest>::new());
+            .add_plugins(RequestPlugin::<JoinGameRequest>::new())
+            .add_plugins(RequestPlugin::<LeaveGameRequest>::new());
     }
 }
 
@@ -75,10 +76,15 @@ fn handle_responses<R: MyRequest + Component>(
     results: Query<(Entity, &ReqwestBytesResult), With<R>>,
     mut event_writer: EventWriter<OnResponce<R>>,
 ) {
+    // TODO: notify on error
     for (entity, res) in results.iter() {
-        let str = res.as_str().unwrap();
-        let responce: R::Responce = serde_json::from_str(str).unwrap();
-        event_writer.send(OnResponce(responce));
+        let Some(str) = res.as_str() else {
+            continue;
+        };
+        let Ok(response) = serde_json::from_str(str) else {
+            continue;
+        };
+        event_writer.send(OnResponce(response));
         commands.entity(entity).despawn_recursive();
     }
 }
