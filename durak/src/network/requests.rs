@@ -103,3 +103,27 @@ impl MyRequest for StatusRequest {
         map
     }
 }
+
+#[derive(Debug, Component)]
+pub struct StartGameRequest(pub AuthHeader);
+
+impl MyRequest for StartGameRequest {
+    type Responce = ();
+
+    type Query = ();
+
+    fn method(&self) -> Method {
+        Method::POST
+    }
+
+    fn url(&self) -> Url {
+        let url = format!("{}/game/start", Self::URL);
+        Url::parse(&url).unwrap()
+    }
+
+    fn headers(&self) -> HeaderMap {
+        let mut map = HeaderMap::new();
+        map.insert(AUTHORIZATION, self.0.into_header());
+        map
+    }
+}

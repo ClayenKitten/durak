@@ -16,7 +16,10 @@ use durak_lib::{
 };
 
 use crate::{
-    network::{CreateGameRequest, JoinGameRequest, LeaveGameRequest, OnResponce, StatusRequest},
+    network::{
+        CreateGameRequest, JoinGameRequest, LeaveGameRequest, OnResponce, StartGameRequest,
+        StatusRequest,
+    },
     ui_utils::BigTextInput,
     GameScreen,
 };
@@ -365,6 +368,11 @@ fn display_lobby(
                                         )
                                         .clicked()
                                     {
+                                        commands.spawn(StartGameRequest(AuthHeader {
+                                            game_id: *game_id,
+                                            player_id: *player_id,
+                                            token: *token,
+                                        }));
                                         next_game_state.0 = Some(GameScreen::RoundSetup);
                                         *menu_state = MenuState::None;
                                     }
