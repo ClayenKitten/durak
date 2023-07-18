@@ -1,12 +1,11 @@
 //! Game state and logic.
 
 use durak_lib::{
-    game::card::{Card, CardRank, CardSuit},
+    game::{card::{Card, CardSuit}, deck::Deck},
     identifiers::PlayerId,
     network::{GameState, JoinGameError},
 };
-use rand::{seq::SliceRandom, thread_rng, Rng};
-use strum::IntoEnumIterator;
+use rand::{Rng, thread_rng};
 
 #[derive(Debug)]
 pub struct Game {
@@ -192,7 +191,7 @@ impl Game {
     }
 
     fn pick_trump() -> CardSuit {
-        match rand::thread_rng().gen_range(0..=3) {
+        match thread_rng().gen_range(0..=3) {
             0 => CardSuit::Clover,
             1 => CardSuit::Diamond,
             2 => CardSuit::Heart,
@@ -215,37 +214,6 @@ impl RoundState {
     // TODO: allow more than two players.
     pub fn swap_players(&mut self) {
         std::mem::swap(&mut self.attacker, &mut self.defender)
-    }
-}
-
-#[derive(Debug)]
-struct Deck(Vec<Card>);
-
-impl Deck {
-    /// Creates new (not shuffled) deck.
-    pub fn new() -> Self {
-        let mut cards = Vec::with_capacity(36);
-        for suit in CardSuit::iter() {
-            for rank in CardRank::iter() {
-                cards.push(Card { suit, rank });
-            }
-        }
-        Self(cards)
-    }
-
-    /// Shuffles all cards in the deck.
-    pub fn shuffle(&mut self) {
-        self.0.shuffle(&mut thread_rng());
-    }
-
-    /// Takes card from the top of the deck.
-    pub fn take(&mut self) -> Option<Card> {
-        self.0.pop()
-    }
-
-    /// Returns `true` if deck is empty.
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
     }
 }
 
