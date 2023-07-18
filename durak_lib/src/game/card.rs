@@ -1,64 +1,13 @@
-//! Common data structures used by both server and client.
-
-use std::{fmt::Display, str::FromStr};
+#[cfg(feature = "bevy")]
+use bevy_ecs::component::Component;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{CardRank, CardSuit};
+use strum::EnumIter;
 
-/// A unique identificator of game.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct GameId(pub u64);
-
-impl GameId {
-    pub fn new(id: u64) -> Self {
-        GameId(id)
-    }
-}
-
-impl FromStr for GameId {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.is_empty() {
-            return Err(());
-        }
-        let mut result = 0;
-        for (index, char) in s.chars().rev().enumerate() {
-            let Some(digit) = char.to_digit(16) else {
-                return Err(());
-            };
-            result += digit as u64 * 16u64.pow(index as u32);
-        }
-        Ok(GameId(result))
-    }
-}
-
-impl Display for GameId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:X}", self.0)
-    }
-}
-
-/// A game-wide unique identificator of player.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct PlayerId(pub u8);
-
-impl PlayerId {
-    pub fn new(id: u8) -> Self {
-        PlayerId(id)
-    }
-}
-
-impl Display for PlayerId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-/// Single card.
+/// A single card.
+///
+/// Each deck must have exactly one card of each type.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Card {
     pub suit: CardSuit,
@@ -78,11 +27,36 @@ impl Card {
     }
 }
 
+#[derive(EnumIter, Debug, PartialEq, Eq, Clone, Copy, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(Component))]
+#[serde(rename_all = "lowercase")]
+pub enum CardSuit {
+    Clover,
+    Diamond,
+    Heart,
+    Pike,
+}
+
+#[derive(
+    EnumIter, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
+#[cfg_attr(feature = "bevy", derive(Component))]
+#[serde(rename_all = "lowercase")]
+pub enum CardRank {
+    Six,
+    Seven,
+    Eight,
+    Nine,
+    Ten,
+    Jack,
+    Queen,
+    King,
+    Ace,
+}
+
 #[cfg(test)]
 mod test {
-    use std::str::FromStr;
-
-    use crate::{common::GameId, CardRank, CardSuit};
+    use crate::game::card::{CardRank, CardSuit};
 
     use super::Card;
 
@@ -145,13 +119,5 @@ mod test {
             !defending.can_beat(attacking, CardSuit::Clover),
             "non-trump shouldn't be able to beat any trump"
         );
-    }
-
-    #[test]
-    fn test_game_id_decoding() {
-        let game_id = GameId::new(25);
-        let s = game_id.to_string();
-        let parsed = GameId::from_str(&s).unwrap();
-        assert_eq!(game_id, parsed);
     }
 }

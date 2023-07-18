@@ -4,7 +4,7 @@ use axum::{
     http::{header::AUTHORIZATION, request::Parts, StatusCode},
 };
 use durak_lib::{
-    common::{GameId, PlayerId},
+    identifiers::{GameId, PlayerId},
     network::AuthHeader,
 };
 

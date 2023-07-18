@@ -9,7 +9,7 @@ use bevy_egui::{
     EguiContexts,
 };
 use durak_lib::{
-    common::{GameId, PlayerId},
+    identifiers::{GameId, PlayerId},
     network::{
         AuthHeader, CreateGameData, CreateGameResponce, GameState, JoinGameData, JoinGameResponce,
     },

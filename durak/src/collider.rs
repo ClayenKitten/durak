@@ -4,7 +4,7 @@
 //! when one is updated to bevy 0.11.0.
 
 use bevy::prelude::*;
-use durak_lib::{CardRank, CardSuit};
+use durak_lib::game::card::{CardRank, CardSuit};
 
 use crate::card::events::CardClicked;
 

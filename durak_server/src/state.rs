@@ -7,7 +7,7 @@ use std::{
 
 use axum::extract::FromRef;
 use durak_lib::{
-    common::{GameId, PlayerId},
+    identifiers::{GameId, PlayerId},
     network::Token,
 };
 use rand::{thread_rng, Rng};

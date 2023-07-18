@@ -14,7 +14,10 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::common::{Card, GameId, PlayerId};
+use crate::{
+    game::card::Card,
+    identifiers::{GameId, PlayerId},
+};
 
 /// Token used to uniquely identify each player session.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]

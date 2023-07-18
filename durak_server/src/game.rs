@@ -1,9 +1,9 @@
 //! Game state and logic.
 
 use durak_lib::{
-    common::{Card, PlayerId},
+    game::card::{Card, CardRank, CardSuit},
+    identifiers::PlayerId,
     network::{GameState, JoinGameError},
-    CardRank, CardSuit,
 };
 use rand::{seq::SliceRandom, thread_rng, Rng};
 use strum::IntoEnumIterator;

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use durak_lib::{CardRank, CardSuit};
+use durak_lib::game::card::{CardRank, CardSuit};
 
 use crate::{collider::cursor_system, round::Table, GameScreen, Hand, Player};
 

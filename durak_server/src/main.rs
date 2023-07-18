@@ -4,7 +4,8 @@ pub mod state;
 
 use auth::{Authenticate, AuthenticateHost};
 use durak_lib::{
-    common::{Card, PlayerId},
+    game::card::Card,
+    identifiers::PlayerId,
     network::{CreateGameData, CreateGameResponce, JoinGameData, JoinGameError, JoinGameResponce},
 };
 

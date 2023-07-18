@@ -3,7 +3,7 @@
 use std::f32::consts::FRAC_PI_2;
 
 use bevy::prelude::*;
-use durak_lib::{CardRank, CardSuit};
+use durak_lib::game::card::{CardRank, CardSuit};
 use rand::seq::SliceRandom;
 use strum::IntoEnumIterator;
 

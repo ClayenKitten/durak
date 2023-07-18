@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use durak_lib::CardSuit;
+use durak_lib::game::card::CardSuit;
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Table([TableSlot; 6]);
