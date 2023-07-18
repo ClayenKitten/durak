@@ -131,7 +131,7 @@ async fn state(
     Authenticate(player): Authenticate,
 ) -> impl IntoResponse {
     games
-        .with_game(player.game_id, |game| game.state.clone().into_response())
+        .with_game(player.game_id, |game| game.state().clone().into_response())
         .unwrap_or((StatusCode::NOT_FOUND, "Game not found").into_response())
 }
 

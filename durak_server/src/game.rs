@@ -12,7 +12,7 @@ use strum::IntoEnumIterator;
 pub struct Game {
     pub host: PlayerId,
     pub password: String,
-    pub state: GameState,
+    state: GameState,
     trump: CardSuit,
     deck: Deck,
     players: Vec<Player>,
@@ -34,6 +34,11 @@ impl Game {
             }],
             round: None,
         }
+    }
+
+    /// Current state of the game.
+    pub fn state(&self) -> &GameState {
+        &self.state
     }
 
     /// Attempts to join existing game with id and password.
