@@ -30,7 +30,7 @@ impl Token {
 /// Data that is passed by requests in `Authorization` header.
 ///
 /// Should be encoded as json.
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(Resource))]
 pub struct AuthHeader {
     pub game_id: GameId,
