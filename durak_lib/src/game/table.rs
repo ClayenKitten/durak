@@ -92,6 +92,19 @@ impl Table {
     fn all_attacks_answered(&self) -> bool {
         self.0.iter().all(|(_, defending)| defending.is_some())
     }
+
+    /// Returns number of slots that have cards in them.
+    pub fn occupied_slots(&self) -> usize {
+        self.0
+            .iter()
+            .map(|(_, def)| if def.is_some() { 2 } else { 1 })
+            .sum()
+    }
+
+    /// Returns iterator over slots of table.
+    pub fn iter(&self) -> impl Iterator<Item = (Card, Option<Card>)> + '_ {
+        self.0.iter().cloned()
+    }
 }
 
 impl Default for Table {
