@@ -1,11 +1,15 @@
 //! Game state and logic.
 
 use durak_lib::{
-    game::{card::{Card, CardSuit}, deck::Deck},
+    game::{
+        card::{Card, CardSuit},
+        deck::Deck,
+        hand::Hand,
+    },
     identifiers::PlayerId,
     network::{GameState, JoinGameError},
 };
-use rand::{Rng, thread_rng};
+use rand::{thread_rng, Rng};
 
 #[derive(Debug)]
 pub struct Game {
@@ -221,40 +225,6 @@ impl RoundState {
 struct Player {
     pub id: PlayerId,
     pub hand: Hand,
-}
-
-#[derive(Debug)]
-struct Hand(Vec<Card>);
-
-impl Hand {
-    /// Creates new empty hand.
-    pub fn new() -> Self {
-        Hand(Vec::with_capacity(6))
-    }
-
-    /// Adds card to the hand.
-    pub fn add(&mut self, card: Card) {
-        self.0.push(card);
-    }
-
-    /// Removes card from the hand.
-    ///
-    /// Returns `true` if card was in the hand.
-    pub fn remove(&mut self, card: Card) -> bool {
-        match self.0.iter().position(|card_| *card_ == card) {
-            Some(index) => {
-                self.0.remove(index);
-                true
-            }
-            None => false,
-        }
-    }
-}
-
-impl Default for Hand {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 /// Table is the main location where game is played.
