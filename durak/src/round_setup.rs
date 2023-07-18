@@ -8,7 +8,7 @@ use rand::seq::SliceRandom;
 use strum::IntoEnumIterator;
 
 use crate::{
-    card::{Card, Covered},
+    card::{CardData, Covered},
     round::{Table, Trump},
     Deck, GameScreen, Hand, Player,
 };
@@ -82,7 +82,7 @@ fn spawn_deck(
     let texture_handle = asset_server.load("cards.png");
     let texture_atlas = TextureAtlas::from_grid(
         texture_handle,
-        Vec2::new(Card::PIXEL_WIDTH, Card::PIXEL_HEIGHT),
+        Vec2::new(CardData::PIXEL_WIDTH, CardData::PIXEL_HEIGHT),
         14,
         4,
         None,
@@ -91,7 +91,7 @@ fn spawn_deck(
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
     let deck_position = Vec3 {
-        x: camera.single().area.min.x + Card::WIDTH / 2. + 16.,
+        x: camera.single().area.min.x + CardData::WIDTH / 2. + 16.,
         z: 1.,
         ..default()
     };
@@ -106,11 +106,11 @@ fn spawn_deck(
                     Covered,
                     SpriteSheetBundle {
                         texture_atlas: texture_atlas_handle.clone(),
-                        sprite: TextureAtlasSprite::new(Card::BACK_SPRITE_ID),
+                        sprite: TextureAtlasSprite::new(CardData::BACK_SPRITE_ID),
                         transform: Transform {
                             translation: deck_position,
                             rotation: Quat::default(),
-                            scale: Vec3::splat(Card::SCALE),
+                            scale: Vec3::splat(CardData::SCALE),
                         },
                         ..default()
                     },
@@ -157,7 +157,7 @@ fn pick_trump(
         .get_mut(trump_card)
         .expect("trump card should have transform and suit");
     trump_transform.rotate_z(FRAC_PI_2);
-    trump_transform.translation.x += (Card::HEIGHT - Card::WIDTH) / 2.;
+    trump_transform.translation.x += (CardData::HEIGHT - CardData::WIDTH) / 2.;
     commands.entity(trump_card).remove::<Covered>();
     commands.spawn(Trump(*trump));
     advance.send(AdvanceSetupPhase);

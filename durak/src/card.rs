@@ -45,7 +45,7 @@ fn card_click(
 /// Updates texture for every newly covered card.
 fn cover_cards(mut query: Query<&mut TextureAtlasSprite, Added<Covered>>) {
     for mut texture in query.iter_mut() {
-        texture.index = Card::BACK_SPRITE_ID;
+        texture.index = CardData::BACK_SPRITE_ID;
     }
 }
 
@@ -56,15 +56,15 @@ fn uncover_cards(
 ) {
     for entity in &mut removed {
         if let Ok((mut texture, &rank, &suit)) = query.get_mut(entity) {
-            texture.index = Card::sprite_atlas_id(suit, rank);
+            texture.index = CardData::sprite_atlas_id(suit, rank);
         }
     }
 }
 
 /// Set of static data associated with cards.
-pub struct Card;
+pub struct CardData;
 
-impl Card {
+impl CardData {
     pub const PIXEL_WIDTH: f32 = 42.;
     pub const PIXEL_HEIGHT: f32 = 60.;
 
@@ -106,7 +106,7 @@ pub mod movement {
 
     use bevy::prelude::*;
 
-    use crate::{card::Card, collider::Collider, round::Table, GameScreen, Hand, Player};
+    use crate::{card::CardData, collider::Collider, round::Table, GameScreen, Hand, Player};
 
     use super::{CardRank, CardSuit};
 
@@ -135,16 +135,16 @@ pub mod movement {
 
             let area = camera.single().area;
             let y = match player.is_controlled {
-                true => area.min.y + Card::HEIGHT / 2. - Card::HEIGHT / 3.,
-                false => area.max.y - Card::HEIGHT / 2. + Card::HEIGHT / 3.,
+                true => area.min.y + CardData::HEIGHT / 2. - CardData::HEIGHT / 3.,
+                false => area.max.y - CardData::HEIGHT / 2. + CardData::HEIGHT / 3.,
             };
             for (number, entity) in hand.0.iter().enumerate() {
                 let x = card_x_location(number, hand.count(), 10.);
                 let collider = Collider(Rect::from_center_size(
                     Vec2 { x, y },
                     Vec2 {
-                        x: Card::WIDTH,
-                        y: Card::HEIGHT,
+                        x: CardData::WIDTH,
+                        y: CardData::HEIGHT,
                     },
                 ));
                 let mut card_transform = cards.get_mut(*entity).expect("card should exist");
@@ -188,11 +188,11 @@ pub mod movement {
 
         let max_offset = {
             let number_of_cards = (total - 1) as f32;
-            number_of_cards * Card::WIDTH + number_of_cards * gap
+            number_of_cards * CardData::WIDTH + number_of_cards * gap
         };
         let x = {
             let number = index as f32;
-            let offset = number * Card::WIDTH + number * gap;
+            let offset = number * CardData::WIDTH + number * gap;
             offset - max_offset / 2.
         };
         x
