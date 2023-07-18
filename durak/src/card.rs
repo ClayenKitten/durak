@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use durak_lib::game::card::{CardRank, CardSuit};
+use durak_lib::game::card::Card;
 
 use crate::{collider::cursor_system, round::Table, GameScreen, Hand, Player};
 
@@ -51,12 +51,12 @@ fn cover_cards(mut query: Query<&mut TextureAtlasSprite, Added<Covered>>) {
 
 /// Updates texture for every newly uncovered card.
 fn uncover_cards(
-    mut query: Query<(&mut TextureAtlasSprite, &CardRank, &CardSuit)>,
+    mut query: Query<(&mut TextureAtlasSprite, &Card)>,
     mut removed: RemovedComponents<Covered>,
 ) {
     for entity in &mut removed {
-        if let Ok((mut texture, &rank, &suit)) = query.get_mut(entity) {
-            texture.index = CardData::sprite_atlas_id(suit, rank);
+        if let Ok((mut texture, &card)) = query.get_mut(entity) {
+            texture.index = CardData::sprite_atlas_id(card);
         }
     }
 }
@@ -75,23 +75,24 @@ impl CardData {
     /// Sprite id for the back side of the card.
     pub const BACK_SPRITE_ID: usize = 27;
 
-    pub fn sprite_atlas_id(suit: CardSuit, rank: CardRank) -> usize {
-        let row = match suit {
-            CardSuit::Heart => 0,
-            CardSuit::Diamond => 1,
-            CardSuit::Clover => 2,
-            CardSuit::Pike => 3,
+    pub fn sprite_atlas_id(card: Card) -> usize {
+        use durak_lib::game::card::{CardSuit::*, CardRank::*};
+        let row = match card.suit {
+            Heart => 0,
+            Diamond => 1,
+            Clover => 2,
+            Pike => 3,
         };
-        let column = match rank {
-            CardRank::Ace => 0,
-            CardRank::Six => 5,
-            CardRank::Seven => 6,
-            CardRank::Eight => 7,
-            CardRank::Nine => 8,
-            CardRank::Ten => 9,
-            CardRank::Jack => 10,
-            CardRank::Queen => 11,
-            CardRank::King => 12,
+        let column = match card.rank {
+            Ace => 0,
+            Six => 5,
+            Seven => 6,
+            Eight => 7,
+            Nine => 8,
+            Ten => 9,
+            Jack => 10,
+            Queen => 11,
+            King => 12,
         };
         row * 14 + column
     }
@@ -105,10 +106,9 @@ pub mod movement {
     use std::f32::consts::FRAC_PI_6;
 
     use bevy::prelude::*;
+    use durak_lib::game::card::Card;
 
     use crate::{card::CardData, collider::Collider, round::Table, GameScreen, Hand, Player};
-
-    use super::{CardRank, CardSuit};
 
     /// Plugin that update location of cards.
     pub struct CardMovementPlugin;
@@ -124,7 +124,7 @@ pub mod movement {
 
     pub fn move_to_hand(
         mut commands: Commands,
-        mut cards: Query<&mut Transform, (With<CardRank>, With<CardSuit>)>,
+        mut cards: Query<&mut Transform, With<Card>>,
         hands: Query<(&Player, &Hand), Changed<Hand>>,
         camera: Query<&OrthographicProjection>,
     ) {
@@ -157,7 +157,7 @@ pub mod movement {
     fn move_to_table(
         mut commands: Commands,
         mut table: Query<&mut Table, Changed<Table>>,
-        mut cards: Query<&mut Transform, (With<CardRank>, With<CardSuit>)>,
+        mut cards: Query<&mut Transform, With<Card>>,
     ) {
         if table.is_empty() {
             return;

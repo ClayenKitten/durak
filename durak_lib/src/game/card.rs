@@ -1,6 +1,3 @@
-#[cfg(feature = "bevy")]
-use bevy_ecs::component::Component;
-
 use serde::{Deserialize, Serialize};
 
 use strum::EnumIter;
@@ -9,6 +6,7 @@ use strum::EnumIter;
 ///
 /// Each deck must have exactly one card of each type.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[cfg_attr(feature = "bevy", derive(bevy_ecs::prelude::Component))]
 pub struct Card {
     pub suit: CardSuit,
     pub rank: CardRank,
@@ -28,7 +26,6 @@ impl Card {
 }
 
 #[derive(EnumIter, Debug, PartialEq, Eq, Clone, Copy, Hash, Serialize, Deserialize)]
-#[cfg_attr(feature = "bevy", derive(Component))]
 #[serde(rename_all = "lowercase")]
 pub enum CardSuit {
     Clover,
@@ -40,7 +37,6 @@ pub enum CardSuit {
 #[derive(
     EnumIter, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
 )]
-#[cfg_attr(feature = "bevy", derive(Component))]
 #[serde(rename_all = "lowercase")]
 pub enum CardRank {
     Six,

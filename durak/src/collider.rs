@@ -4,7 +4,7 @@
 //! when one is updated to bevy 0.11.0.
 
 use bevy::prelude::*;
-use durak_lib::game::card::{CardRank, CardSuit};
+use durak_lib::game::card::Card;
 
 use crate::card::events::CardClicked;
 
@@ -22,7 +22,7 @@ pub fn cursor_system(
     camera: Query<(&Camera, &GlobalTransform), With<Camera>>,
     input: Res<Input<MouseButton>>,
     colliders: Query<(Entity, &Collider)>,
-    cards: Query<(), (With<CardSuit>, With<CardRank>)>,
+    cards: Query<(), With<Card>>,
     mut event_writer: EventWriter<CardClicked>,
 ) {
     let (camera, camera_transform) = camera.single();

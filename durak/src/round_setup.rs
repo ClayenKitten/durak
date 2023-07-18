@@ -3,7 +3,7 @@
 use std::f32::consts::FRAC_PI_2;
 
 use bevy::prelude::*;
-use durak_lib::game::card::{CardRank, CardSuit};
+use durak_lib::game::card::{Card, CardRank, CardSuit};
 use rand::seq::SliceRandom;
 use strum::IntoEnumIterator;
 
@@ -101,8 +101,7 @@ fn spawn_deck(
         for rank in CardRank::iter() {
             let entity = commands
                 .spawn((
-                    suit,
-                    rank,
+                    Card { suit, rank },
                     Covered,
                     SpriteSheetBundle {
                         texture_atlas: texture_atlas_handle.clone(),
@@ -143,7 +142,7 @@ fn shuffle_deck(
 fn pick_trump(
     mut commands: Commands,
     mut deck: Query<&mut Deck, Added<Deck>>,
-    mut card: Query<(&mut Transform, &CardSuit)>,
+    mut cards: Query<(&mut Transform, &Card)>,
     mut advance: EventWriter<AdvanceSetupPhase>,
 ) {
     if deck.is_empty() {
@@ -153,13 +152,11 @@ fn pick_trump(
     let trump_card = *deck
         .first()
         .expect("deck shouldn't be empty at the moment of choosing trump card");
-    let (mut trump_transform, trump) = card
-        .get_mut(trump_card)
-        .expect("trump card should have transform and suit");
+    let (mut trump_transform, trump) = cards.get_mut(trump_card).unwrap();
     trump_transform.rotate_z(FRAC_PI_2);
     trump_transform.translation.x += (CardData::HEIGHT - CardData::WIDTH) / 2.;
     commands.entity(trump_card).remove::<Covered>();
-    commands.spawn(Trump(*trump));
+    commands.spawn(Trump(trump.suit));
     advance.send(AdvanceSetupPhase);
 }
 
