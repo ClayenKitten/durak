@@ -26,7 +26,10 @@ impl Game {
             host: PlayerId::new(0),
             password,
             trump: Self::pick_trump(),
-            state: GameState::Created,
+            state: GameState::Lobby {
+                players: vec![PlayerId::new(0)],
+                can_start: false,
+            },
             deck: Deck::new(),
             players: vec![Player {
                 id: PlayerId::new(0),
@@ -109,6 +112,7 @@ impl Game {
         self.state = GameState::ExpectAction {
             table: Vec::new(),
             player: attacker,
+            players: self.players.iter().map(|p| p.id).collect(),
         };
     }
 
@@ -144,6 +148,7 @@ impl Game {
         if round.table.retreat() {
             round.swap_players();
             self.state = GameState::ExpectAction {
+                players: self.players.iter().map(|p| p.id).collect(),
                 player: round.defender,
                 table: round.table.0.clone(),
             };
@@ -171,6 +176,7 @@ impl Game {
             player.hand.add(card);
         }
         self.state = GameState::ExpectAction {
+            players: self.players.iter().map(|p| p.id).collect(),
             player: round.attacker,
             table: round.table.0.clone(),
         };

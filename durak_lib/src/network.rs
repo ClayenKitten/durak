@@ -147,16 +147,18 @@ impl IntoResponse for PlayCardResponce {
     }
 }
 
-/// State of the game.
+/// State of the game that is known to all players.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum GameState {
-    /// Game is created, but not enough players connected.
-    Created,
-    /// Game is ready to start on host's command.
-    ReadyToStart,
+    /// Game is created. It can be started by host's command if `can_start` is true.
+    Lobby {
+        players: Vec<PlayerId>,
+        can_start: bool,
+    },
     /// Expecting player's action.
     ExpectAction {
         player: PlayerId,
+        players: Vec<PlayerId>,
         table: Vec<(Card, Option<Card>)>,
     },
     /// Game is ended.
