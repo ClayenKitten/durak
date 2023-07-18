@@ -140,14 +140,14 @@ pub mod movement {
             };
             for (number, entity) in hand.0.iter().enumerate() {
                 let x = card_x_location(number, hand.count(), 10.);
-                let collider = Collider(
-                    Rect::from_center_size(
-                        Vec2 { x, y },
-                        Vec2 { x: Card::WIDTH, y: Card::HEIGHT }
-                    )
-                );
-                let mut card_transform = cards.get_mut(*entity)
-                    .expect("card should exist");
+                let collider = Collider(Rect::from_center_size(
+                    Vec2 { x, y },
+                    Vec2 {
+                        x: Card::WIDTH,
+                        y: Card::HEIGHT,
+                    },
+                ));
+                let mut card_transform = cards.get_mut(*entity).expect("card should exist");
                 card_transform.translation = Vec3::new(x, y, 0.0);
                 commands.entity(*entity).insert(collider);
             }

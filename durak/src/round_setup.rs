@@ -80,8 +80,14 @@ fn spawn_deck(
     mut advance: EventWriter<AdvanceSetupPhase>,
 ) {
     let texture_handle = asset_server.load("cards.png");
-    let texture_atlas =
-        TextureAtlas::from_grid(texture_handle, Vec2::new(Card::PIXEL_WIDTH, Card::PIXEL_HEIGHT), 14, 4, None, None);
+    let texture_atlas = TextureAtlas::from_grid(
+        texture_handle,
+        Vec2::new(Card::PIXEL_WIDTH, Card::PIXEL_HEIGHT),
+        14,
+        4,
+        None,
+        None,
+    );
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
     let deck_position = Vec3 {

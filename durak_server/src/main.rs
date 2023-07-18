@@ -189,7 +189,11 @@ async fn retreat(
 async fn leave(State(games): State<Games>, Authenticate(player): Authenticate) {
     games.with_game(player.game_id, |game| {
         if game.remove_player(player.player_id) {
-            tracing::debug!("player #{} left the game `{}`", player.player_id, player.game_id);
+            tracing::debug!(
+                "player #{} left the game `{}`",
+                player.player_id,
+                player.game_id
+            );
         }
     });
 }

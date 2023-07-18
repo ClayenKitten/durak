@@ -82,7 +82,7 @@ impl Card {
 mod test {
     use std::str::FromStr;
 
-    use crate::{CardRank, CardSuit, common::GameId};
+    use crate::{common::GameId, CardRank, CardSuit};
 
     use super::Card;
 

@@ -4,7 +4,7 @@ use bevy_mod_reqwest::reqwest::{
     Method, Url,
 };
 use durak_lib::network::{
-    AuthHeader, CreateGameData, CreateGameResponce, JoinGameData, JoinGameResponce, GameState,
+    AuthHeader, CreateGameData, CreateGameResponce, GameState, JoinGameData, JoinGameResponce,
 };
 
 use super::MyRequest;

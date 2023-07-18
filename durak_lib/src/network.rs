@@ -83,7 +83,11 @@ pub struct JoinGameData {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum JoinGameResponce {
     /// Joined successfully.
-    Ok { game_id: GameId, player_id: PlayerId, token: Token },
+    Ok {
+        game_id: GameId,
+        player_id: PlayerId,
+        token: Token,
+    },
     /// Game with provided id doesn't exist.
     NotFound,
     /// Password doesn't match.

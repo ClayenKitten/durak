@@ -75,7 +75,7 @@ impl Game {
     }
 
     /// Removes player from the game.
-    /// 
+    ///
     /// Returns `true` if removed successfully.
     pub fn remove_player(&mut self, player_id: PlayerId) -> bool {
         let Some(index) = self.players.iter().position(|p| p.id == player_id) else {

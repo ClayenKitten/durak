@@ -10,7 +10,9 @@ use bevy_egui::{
 };
 use durak_lib::{
     common::{GameId, PlayerId},
-    network::{AuthHeader, CreateGameData, CreateGameResponce, JoinGameData, JoinGameResponce, GameState},
+    network::{
+        AuthHeader, CreateGameData, CreateGameResponce, GameState, JoinGameData, JoinGameResponce,
+    },
 };
 
 use crate::{
@@ -232,7 +234,10 @@ fn join_game(
         ui.add_space(ui.available_width() - BUTTON_SIZE.x);
 
         let id: Result<GameId, _> = id.parse();
-        if ui.add_enabled(id.is_ok(), Button::new("Join").min_size(BUTTON_SIZE)).clicked() {
+        if ui
+            .add_enabled(id.is_ok(), Button::new("Join").min_size(BUTTON_SIZE))
+            .clicked()
+        {
             let Ok(id) = id  else {
                 return;
             };
@@ -353,10 +358,13 @@ fn display_lobby(
                                         *menu_state = MenuState::MainMenu;
                                     }
                                     ui.add_space(ui.available_width() - BUTTON_SIZE.x);
-                                    if ui.add_enabled(
-                                        status.can_start,
-                                        Button::new("Start").min_size(BUTTON_SIZE)
-                                    ).clicked() {
+                                    if ui
+                                        .add_enabled(
+                                            status.can_start,
+                                            Button::new("Start").min_size(BUTTON_SIZE),
+                                        )
+                                        .clicked()
+                                    {
                                         next_game_state.0 = Some(GameScreen::RoundSetup);
                                         *menu_state = MenuState::None;
                                     }
@@ -416,7 +424,7 @@ fn on_status_response(
                     players: players.clone(),
                     can_start: *can_start,
                 };
-            },
+            }
             _ => continue,
         }
     }

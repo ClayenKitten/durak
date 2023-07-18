@@ -102,7 +102,10 @@ fn startup(
 ) {
     commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {
-            scaling_mode: ScalingMode::Fixed { width: 1280., height: 800. },
+            scaling_mode: ScalingMode::Fixed {
+                width: 1280.,
+                height: 800.,
+            },
             ..default()
         },
         ..default()
@@ -112,11 +115,17 @@ fn startup(
         ..default()
     });
     commands.spawn((
-        Player { _name: String::from("Me"), is_controlled: true },
+        Player {
+            _name: String::from("Me"),
+            is_controlled: true,
+        },
         Hand::default(),
     ));
     commands.spawn((
-        Player { _name: String::from("Not me"), is_controlled: false },
+        Player {
+            _name: String::from("Not me"),
+            is_controlled: false,
+        },
         Hand::default(),
     ));
 }
