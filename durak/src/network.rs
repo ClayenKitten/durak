@@ -23,7 +23,8 @@ impl Plugin for NetworkPlugin {
             .init_resource::<ReqwestClient>()
             .add_plugins(RequestPlugin::<CreateGameRequest>::new())
             .add_plugins(RequestPlugin::<JoinGameRequest>::new())
-            .add_plugins(RequestPlugin::<LeaveGameRequest>::new());
+            .add_plugins(RequestPlugin::<LeaveGameRequest>::new())
+            .add_plugins(RequestPlugin::<StatusRequest>::new());
     }
 }
 
