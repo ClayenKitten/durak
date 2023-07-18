@@ -67,6 +67,10 @@ impl Game {
             id,
             hand: Hand::default(),
         });
+        if let GameState::Lobby { players, can_start } = &mut self.state {
+            players.push(id);
+            *can_start = self.players.len() >= 2;
+        }
         Some(id)
     }
 
@@ -78,6 +82,10 @@ impl Game {
             return false;
         };
         self.players.remove(index);
+        if let GameState::Lobby { players, can_start } = &mut self.state {
+            players.remove(index);
+            *can_start = self.players.len() >= 2;
+        }
         true
     }
 

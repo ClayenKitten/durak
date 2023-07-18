@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bevy::{app::AppExit, prelude::*};
 use bevy_egui::{
     egui::{
@@ -8,11 +10,11 @@ use bevy_egui::{
 };
 use durak_lib::{
     common::{GameId, PlayerId},
-    network::{AuthHeader, CreateGameData, CreateGameResponce, JoinGameData, JoinGameResponce},
+    network::{AuthHeader, CreateGameData, CreateGameResponce, JoinGameData, JoinGameResponce, GameState},
 };
 
 use crate::{
-    network::{CreateGameRequest, JoinGameRequest, LeaveGameRequest, OnResponce},
+    network::{CreateGameRequest, JoinGameRequest, LeaveGameRequest, OnResponce, StatusRequest},
     ui_utils::BigTextInput,
     GameScreen,
 };
@@ -21,20 +23,24 @@ pub struct MainMenuPlugin;
 
 impl Plugin for MainMenuPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<MenuState>().add_systems(
-            Update,
-            (
-                (on_create_response, on_join_response),
+        app.init_resource::<MenuState>()
+            .init_resource::<LobbyStatus>()
+            .init_resource::<StatusRequestTimer>()
+            .add_systems(
+                Update,
                 (
-                    display_main_menu
-                        .run_if(not(resource_equals(MenuState::None)))
-                        .run_if(not(resource_equals(MenuState::Lobby))),
-                    display_lobby.run_if(resource_equals(MenuState::Lobby)),
-                ),
-            )
-                .chain()
-                .run_if(in_state(GameScreen::MainMenu)),
-        );
+                    request_status.run_if(resource_equals(MenuState::Lobby)),
+                    (on_create_response, on_join_response, on_status_response),
+                    (
+                        display_main_menu
+                            .run_if(not(resource_equals(MenuState::None)))
+                            .run_if(not(resource_equals(MenuState::Lobby))),
+                        display_lobby.run_if(resource_equals(MenuState::Lobby)),
+                    ),
+                )
+                    .chain()
+                    .run_if(in_state(GameScreen::MainMenu)),
+            );
     }
 }
 
@@ -276,9 +282,9 @@ fn display_lobby(
     mut commands: Commands,
     mut menu_state: ResMut<MenuState>,
     mut next_game_state: ResMut<NextState<GameScreen>>,
+    status: Res<LobbyStatus>,
     auth: Option<Res<AuthHeader>>,
 ) {
-    let players = vec![PlayerId(0), PlayerId(1)];
     let ctx = ctx.ctx_mut();
 
     match auth {
@@ -324,7 +330,7 @@ fn display_lobby(
                             Sense::click(),
                         );
                         ui.allocate_ui_at_rect(rect, |ui| {
-                            for player in players.iter() {
+                            for player in status.players.iter() {
                                 player_entry(ui, *player, true);
                             }
                         });
@@ -347,8 +353,10 @@ fn display_lobby(
                                         *menu_state = MenuState::MainMenu;
                                     }
                                     ui.add_space(ui.available_width() - BUTTON_SIZE.x);
-                                    if ui.add(Button::new("Start").min_size(BUTTON_SIZE)).clicked()
-                                    {
+                                    if ui.add_enabled(
+                                        status.can_start,
+                                        Button::new("Start").min_size(BUTTON_SIZE)
+                                    ).clicked() {
                                         next_game_state.0 = Some(GameScreen::RoundSetup);
                                         *menu_state = MenuState::None;
                                     }
@@ -381,4 +389,52 @@ fn player_entry(ui: &mut Ui, player: PlayerId, is_host: bool) {
                 });
             });
         });
+}
+
+fn request_status(
+    mut commands: Commands,
+    time: Res<Time>,
+    auth: Option<Res<AuthHeader>>,
+    mut timer: ResMut<StatusRequestTimer>,
+) {
+    if let Some(auth) = auth {
+        if timer.0.just_finished() {
+            commands.spawn(StatusRequest(auth.as_ref().clone()));
+        }
+    }
+    timer.0.tick(time.delta());
+}
+
+fn on_status_response(
+    mut events: EventReader<OnResponce<StatusRequest>>,
+    mut lobby_status: ResMut<LobbyStatus>,
+) {
+    for OnResponce(game_state) in events.iter() {
+        match game_state {
+            GameState::Lobby { players, can_start } => {
+                *lobby_status = LobbyStatus {
+                    players: players.clone(),
+                    can_start: *can_start,
+                };
+            },
+            _ => continue,
+        }
+    }
+}
+
+#[derive(Debug, Resource, Default)]
+struct LobbyStatus {
+    players: Vec<PlayerId>,
+    can_start: bool,
+}
+
+#[derive(Debug, Resource)]
+pub struct StatusRequestTimer(Timer);
+
+impl Default for StatusRequestTimer {
+    fn default() -> Self {
+        let mut timer = Timer::from_seconds(5.0, TimerMode::Repeating);
+        timer.tick(Duration::from_secs_f32(4.8));
+        Self(timer)
+    }
 }
