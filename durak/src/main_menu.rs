@@ -373,8 +373,6 @@ fn display_lobby(
                                             player_id: *player_id,
                                             token: *token,
                                         }));
-                                        next_game_state.0 = Some(GameScreen::RoundSetup);
-                                        *menu_state = MenuState::None;
                                     }
                                 },
                             );
@@ -424,6 +422,8 @@ fn request_status(
 fn on_status_response(
     mut events: EventReader<OnResponce<StatusRequest>>,
     mut lobby_status: ResMut<LobbyStatus>,
+    mut menu_state: ResMut<MenuState>,
+    mut next_game_state: ResMut<NextState<GameScreen>>,
 ) {
     for OnResponce(game_state) in events.iter() {
         match game_state {
@@ -432,6 +432,10 @@ fn on_status_response(
                     players: players.clone(),
                     can_start: *can_start,
                 };
+            }
+            GameState::ExpectAction { .. } => {
+                *menu_state = MenuState::None;
+                next_game_state.0 = Some(GameScreen::RoundSetup);
             }
             _ => continue,
         }
