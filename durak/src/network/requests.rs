@@ -50,7 +50,7 @@ impl MyRequest for JoinGameRequest {
 
     fn query(&self) -> Option<Self::Query> {
         Some([
-            ("id", self.0.id.to_string()),
+            ("id", self.0.id.0.to_string()),
             ("password", self.0.password.clone()),
         ])
     }

@@ -1,6 +1,6 @@
 //! Common data structures used by both server and client.
 
-use std::fmt::Display;
+use std::{fmt::Display, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 
@@ -9,7 +9,7 @@ use crate::{CardRank, CardSuit};
 /// A unique identificator of game.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct GameId(u64);
+pub struct GameId(pub u64);
 
 impl GameId {
     pub fn new(id: u64) -> Self {
@@ -17,9 +17,27 @@ impl GameId {
     }
 }
 
+impl FromStr for GameId {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        if s.is_empty() {
+            return Err(());
+        }
+        let mut result = 0;
+        for (index, char) in s.chars().rev().enumerate() {
+            let Some(digit) = char.to_digit(16) else {
+                return Err(());
+            };
+            result += digit as u64 * 16u64.pow(index as u32);
+        }
+        Ok(GameId(result))
+    }
+}
+
 impl Display for GameId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{:X}", self.0)
     }
 }
 
@@ -62,7 +80,9 @@ impl Card {
 
 #[cfg(test)]
 mod test {
-    use crate::{CardRank, CardSuit};
+    use std::str::FromStr;
+
+    use crate::{CardRank, CardSuit, common::GameId};
 
     use super::Card;
 
@@ -125,5 +145,13 @@ mod test {
             !defending.can_beat(attacking, CardSuit::Clover),
             "non-trump shouldn't be able to beat any trump"
         );
+    }
+
+    #[test]
+    fn test_game_id_decoding() {
+        let game_id = GameId::new(25);
+        let s = game_id.to_string();
+        let parsed = GameId::from_str(&s).unwrap();
+        assert_eq!(game_id, parsed);
     }
 }

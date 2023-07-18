@@ -31,15 +31,19 @@ impl FromRequestParts<AppState> for Authenticate {
             (StatusCode::UNAUTHORIZED, "Authorization failed");
 
         let Some(header) = parts.headers.get(AUTHORIZATION) else {
+            tracing::debug!("Failed auth");
             return Err(REJECTION);
         };
         let Ok(header) = header.to_str() else {
+            tracing::debug!("Failed auth");
             return Err(REJECTION);
         };
         let Ok(AuthHeader { game_id, player_id, token }) = serde_json::from_str::<AuthHeader>(&header) else {
+            tracing::debug!("Failed auth");
             return Err(REJECTION);
         };
         if !state.auth.validate(token, game_id, player_id) {
+            tracing::debug!("Failed auth for game `{game_id}`");
             return Err(REJECTION);
         }
 

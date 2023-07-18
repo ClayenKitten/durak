@@ -231,10 +231,10 @@ fn join_game(
 
         ui.add_space(ui.available_width() - BUTTON_SIZE.x);
 
-        if ui.add(Button::new("Join").min_size(BUTTON_SIZE)).clicked() {
-            let id = match id.parse::<u64>() {
-                Ok(id) => GameId::new(id),
-                Err(_) => return,
+        let id: Result<GameId, _> = id.parse();
+        if ui.add_enabled(id.is_ok(), Button::new("Join").min_size(BUTTON_SIZE)).clicked() {
+            let Ok(id) = id  else {
+                return;
             };
             commands.spawn(JoinGameRequest(JoinGameData {
                 id,
