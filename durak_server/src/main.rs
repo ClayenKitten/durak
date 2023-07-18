@@ -2,9 +2,9 @@ pub mod auth;
 pub mod game;
 pub mod state;
 
-use auth::Authenticate;
+use auth::{Authenticate, AuthenticateHost};
 use durak_lib::{
-    common::{Card, GameId, PlayerId},
+    common::{Card, PlayerId},
     network::{CreateGameData, CreateGameResponce, JoinGameData, JoinGameError, JoinGameResponce},
 };
 
@@ -109,16 +109,13 @@ async fn join_game(
 /// Should be called by game host.
 async fn start(
     State(games): State<Games>,
-    Authenticate(player): Authenticate,
+    AuthenticateHost(player): AuthenticateHost,
 ) -> impl IntoResponse {
     games
         .with_game(player.game_id, |game| {
-            if player.player_id != game.host {
-                (StatusCode::UNAUTHORIZED, "Only host may start the game")
-            } else {
-                game.start();
-                (StatusCode::OK, "Ok")
-            }
+            game.start();
+            tracing::debug!("Started game `{}`", player.game_id);
+            (StatusCode::OK, "Ok")
         })
         .unwrap_or((StatusCode::NOT_FOUND, "Game not found"))
 }
