@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
-    game::card::Card,
+    game::{card::Card, table::Table},
     identifiers::{GameId, PlayerId},
 };
 
@@ -166,7 +166,7 @@ pub enum GameState {
     ExpectAction {
         player: PlayerId,
         players: Vec<PlayerId>,
-        table: Vec<(Card, Option<Card>)>,
+        table: Table,
     },
     /// Game is ended.
     Completed { win: PlayerId },
