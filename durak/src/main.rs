@@ -13,17 +13,6 @@ use main_menu::MainMenuPlugin;
 use network::NetworkPlugin;
 use round_setup::RoundSetupPlugin;
 
-#[derive(Debug, Component)]
-pub struct Player {
-    pub _name: String,
-    pub is_controlled: bool,
-}
-
-/// Marker component for card that is discarded.
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Discarded;
-
-// Our Bevy app's entry point
 fn main() {
     App::new()
         .add_plugins(
@@ -49,11 +38,17 @@ fn main() {
         .run();
 }
 
-fn startup(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut state: ResMut<NextState<GameScreen>>,
-) {
+#[derive(Debug, Component)]
+pub struct Player {
+    pub _name: String,
+    pub is_controlled: bool,
+}
+
+/// Marker component for card that is discarded.
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Discarded;
+
+fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {
             scaling_mode: ScalingMode::Fixed {
