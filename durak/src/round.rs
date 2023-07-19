@@ -7,6 +7,7 @@ use durak_lib::{
     game::{
         card::{Card, CardSuit},
         hand::Hand,
+        table::Table,
     },
     network::AuthHeader,
 };
@@ -46,6 +47,7 @@ fn request_status(
 fn on_status_response(
     mut response: EventReader<OnResponce<StatusRequest>>,
     mut commands: Commands,
+    mut table: Query<&mut Table>,
     mut hand: Query<&mut Hand>,
     cards: Query<Entity, (With<Card>, With<Location>)>,
     mapping: Res<CardMapping>,
@@ -56,6 +58,9 @@ fn on_status_response(
 
     let mut hand = hand.single_mut();
     *hand = status.hand.clone();
+
+    let mut table = table.single_mut();
+    *table = status.table.clone();
 
     for card in cards.iter() {
         commands.entity(card).remove::<Location>();
