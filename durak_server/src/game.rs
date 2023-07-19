@@ -220,6 +220,15 @@ impl RoundState {
     pub fn swap_players(&mut self) {
         std::mem::swap(&mut self.attacker, &mut self.defender)
     }
+
+    /// Returns id of the player whose turn is it to play.
+    pub fn turn(&self) -> PlayerId {
+        if self.table.all_attacks_answered() {
+            self.attacker
+        } else {
+            self.defender
+        }
+    }
 }
 
 #[derive(Debug)]

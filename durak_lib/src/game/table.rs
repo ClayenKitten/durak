@@ -89,7 +89,7 @@ impl Table {
     }
 
     /// Returns `true` if all attacks on the table are answered.
-    fn all_attacks_answered(&self) -> bool {
+    pub fn all_attacks_answered(&self) -> bool {
         self.0.iter().all(|(_, defending)| defending.is_some())
     }
 
