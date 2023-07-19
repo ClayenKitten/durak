@@ -1,9 +1,11 @@
 //! Player's hand.
 
+use serde::{Deserialize, Serialize};
+
 use super::card::Card;
 
 /// Hand is a place where all cards owned by player are kept.
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy_ecs::prelude::Component))]
 pub struct Hand(Vec<Card>);
 
