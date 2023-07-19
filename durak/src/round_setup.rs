@@ -3,7 +3,10 @@
 use bevy::prelude::*;
 use durak_lib::game::{card::CardSuit, deck::Deck, hand::Hand, table::Table};
 
-use crate::{card::CardData, GameScreen, GameStarted};
+use crate::{
+    card::{CardData, CardTextureAtlas},
+    GameScreen, GameStarted,
+};
 
 pub struct RoundSetupPlugin;
 
@@ -28,23 +31,12 @@ fn spawn_table(event_reader: EventReader<GameStarted>, mut commands: Commands) {
 fn spawn_deck(
     event_reader: EventReader<GameStarted>,
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    texture_atlas: Res<CardTextureAtlas>,
     camera: Query<&OrthographicProjection>,
 ) {
     if event_reader.is_empty() {
         return;
     }
-    let texture_handle = asset_server.load("cards.png");
-    let texture_atlas = TextureAtlas::from_grid(
-        texture_handle,
-        Vec2::new(CardData::PIXEL_WIDTH, CardData::PIXEL_HEIGHT),
-        14,
-        4,
-        None,
-        None,
-    );
-    let texture_atlas = texture_atlases.add(texture_atlas);
 
     let deck_position = Vec3 {
         x: camera.single().area.min.x + CardData::WIDTH / 2. + 16.,
@@ -56,7 +48,7 @@ fn spawn_deck(
         Deck::new(),
         SpriteSheetBundle {
             transform: Transform::from_translation(deck_position),
-            texture_atlas,
+            texture_atlas: Handle::clone(&texture_atlas.0),
             sprite: TextureAtlasSprite::new(CardData::BACK_SPRITE_ID),
             ..default()
         },
