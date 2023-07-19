@@ -4,6 +4,7 @@ use bevy_mod_reqwest::reqwest::{
     Method, Url,
 };
 use durak_lib::{
+    game::card::Card,
     network::{AuthHeader, CreateGameData, CreateGameResponce, JoinGameData, JoinGameResponce},
     status::{GameState, GameStatus},
 };
@@ -149,6 +150,37 @@ impl MyRequest for StartGameRequest {
     fn headers(&self) -> HeaderMap {
         let mut map = HeaderMap::new();
         map.insert(AUTHORIZATION, self.0.into_header());
+        map
+    }
+}
+
+#[derive(Debug, Component)]
+pub struct PlayCardRequest {
+    pub auth: AuthHeader,
+    pub card: Card,
+}
+
+impl MyRequest for PlayCardRequest {
+    type Responce = ();
+
+    type Query = Card;
+
+    fn method(&self) -> Method {
+        Method::POST
+    }
+
+    fn url(&self) -> Url {
+        let url = format!("{}/game/play", Self::URL);
+        Url::parse(&url).unwrap()
+    }
+
+    fn query(&self) -> Option<Self::Query> {
+        Some(self.card)
+    }
+
+    fn headers(&self) -> HeaderMap {
+        let mut map = HeaderMap::new();
+        map.insert(AUTHORIZATION, self.auth.into_header());
         map
     }
 }
