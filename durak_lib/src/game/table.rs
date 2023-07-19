@@ -27,6 +27,10 @@ impl Table {
         if self.count() >= 6 || !self.all_attacks_answered() {
             return false;
         }
+        if self.count() == 0 {
+            self.0.push((card, None));
+            return true;
+        }
         for (attacking, defending) in self.0.iter() {
             if attacking.rank == card.rank {
                 self.0.push((card, None));
