@@ -1,5 +1,8 @@
+use std::collections::HashMap;
+
 use bevy::prelude::*;
-use durak_lib::game::card::Card;
+use durak_lib::game::card::{Card, CardRank, CardSuit};
+use strum::IntoEnumIterator;
 
 use crate::{collider::cursor_system, round::Table, GameScreen, Hand, Player};
 
@@ -14,6 +17,7 @@ impl Plugin for CardInteractionPlugin {
             .add_event::<events::CardHoverStarted>()
             .add_event::<events::CardHoverEnded>()
             .add_plugins(movement::CardMovementPlugin)
+            .add_systems(Startup, setup)
             .add_systems(Update, (cover_cards, uncover_cards))
             .add_systems(
                 Update,
@@ -21,6 +25,32 @@ impl Plugin for CardInteractionPlugin {
                     .chain()
                     .run_if(in_state(GameScreen::Round)),
             );
+    }
+}
+
+/// Creates entities for each possible card and stores mapping in [CardMapping].
+fn setup(mut commands: Commands) {
+    let mut mapping = HashMap::with_capacity(36);
+    for suit in CardSuit::iter() {
+        for rank in CardRank::iter() {
+            let entity = commands.spawn(Card { suit, rank }).id();
+            mapping.insert(Card { suit, rank }, entity);
+        }
+    }
+    commands.insert_resource(CardMapping(mapping));
+}
+
+/// Storage that is used to map cards from its value to bevy's entity id.
+// TODO: maybe use `[(Card, Entity); 36]` with custom lookup based on insertion order in `setup`
+#[derive(Debug, Resource)]
+pub struct CardMapping(HashMap<Card, Entity>);
+
+impl CardMapping {
+    pub fn get(&self, card: Card) -> Entity {
+        *self
+            .0
+            .get(&card)
+            .expect("CardMapping must contain every possible card")
     }
 }
 
@@ -76,7 +106,7 @@ impl CardData {
     pub const BACK_SPRITE_ID: usize = 27;
 
     pub fn sprite_atlas_id(card: Card) -> usize {
-        use durak_lib::game::card::{CardSuit::*, CardRank::*};
+        use durak_lib::game::card::{CardRank::*, CardSuit::*};
         let row = match card.suit {
             Heart => 0,
             Diamond => 1,
