@@ -1,8 +1,13 @@
+mod setup;
+
 use std::time::Duration;
 
 use bevy::prelude::*;
 use durak_lib::{
-    game::{card::Card, hand::Hand},
+    game::{
+        card::{Card, CardSuit},
+        hand::Hand,
+    },
     network::AuthHeader,
 };
 
@@ -17,10 +22,12 @@ pub struct RoundPlugin;
 
 impl Plugin for RoundPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<StatusRequestTimer>().add_systems(
-            Update,
-            (request_status, on_status_response).run_if(in_state(GameScreen::Round)),
-        );
+        app.add_plugins(setup::RoundSetupPlugin)
+            .init_resource::<StatusRequestTimer>()
+            .add_systems(
+                Update,
+                (request_status, on_status_response).run_if(in_state(GameScreen::Round)),
+            );
     }
 }
 
@@ -76,3 +83,7 @@ impl Default for StatusRequestTimer {
         Self(timer)
     }
 }
+
+/// Trump suit for a round.
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Trump(pub CardSuit);

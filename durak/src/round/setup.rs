@@ -1,7 +1,7 @@
 //! Contains all data and logic used to setup new round.
 
 use bevy::prelude::*;
-use durak_lib::game::{card::CardSuit, deck::Deck, hand::Hand, table::Table};
+use durak_lib::game::{deck::Deck, hand::Hand, table::Table};
 
 use crate::{
     card::{CardData, CardTextureAtlas},
@@ -62,7 +62,3 @@ fn spawn_hand(mut commands: Commands) {
 fn next_state(mut next: ResMut<NextState<GameScreen>>) {
     next.0 = Some(GameScreen::Round);
 }
-
-/// Trump suit for a round.
-#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Trump(pub CardSuit);
