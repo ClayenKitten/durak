@@ -115,7 +115,15 @@ impl Game {
     /// Starts the game.
     ///
     /// Deck is shuffled and cards are dealed.
-    pub fn start(&mut self) {
+    ///
+    /// Returns `true` if started successfully.
+    pub fn start(&mut self) -> bool {
+        match self.state {
+            GameState::Started { .. } => return false,
+            GameState::Completed { .. } => return false,
+            _ => {}
+        }
+
         self.deck.shuffle();
         for player in self.players.iter_mut() {
             for _ in 0..6 {
@@ -144,6 +152,8 @@ impl Game {
             trump: self.trump,
             players: self.players.iter().map(|p| p.id).collect(),
         };
+
+        true
     }
 
     /// Places card on the table.
