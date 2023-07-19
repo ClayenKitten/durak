@@ -1,7 +1,10 @@
 use std::time::Duration;
 
 use bevy::prelude::*;
-use durak_lib::{game::card::Card, network::AuthHeader};
+use durak_lib::{
+    game::{card::Card, hand::Hand},
+    network::AuthHeader,
+};
 
 use crate::{
     card::{location::Location, CardMapping},
@@ -36,12 +39,17 @@ fn request_status(
 fn on_status_response(
     mut response: EventReader<OnResponce<StatusRequest>>,
     mut commands: Commands,
+    mut hand: Query<&mut Hand>,
     cards: Query<Entity, (With<Card>, With<Location>)>,
     mapping: Res<CardMapping>,
 ) {
     let Some(OnResponce(status)) = response.iter().next() else {
         return;
     };
+
+    let mut hand = hand.single_mut();
+    *hand = status.hand.clone();
+
     for card in cards.iter() {
         commands.entity(card).remove::<Location>();
     }
