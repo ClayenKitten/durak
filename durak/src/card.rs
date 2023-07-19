@@ -56,6 +56,7 @@ impl CardData {
     pub const SCALE: f32 = 3.;
     pub const WIDTH: f32 = Self::PIXEL_WIDTH * Self::SCALE;
     pub const HEIGHT: f32 = Self::PIXEL_HEIGHT * Self::SCALE;
+    pub const SIZE: Vec2 = Vec2::new(Self::WIDTH, Self::HEIGHT);
 
     /// Sprite id for the back side of the card.
     pub const BACK_SPRITE_ID: usize = 27;
