@@ -10,13 +10,13 @@ use bevy_egui::{
 };
 use durak_lib::{
     identifiers::{GameId, PlayerId},
-    network::{AuthHeader, CreateGameData, CreateGameResponce, JoinGameData, JoinGameResponce},
+    network::{AuthHeader, CreateGameData, CreateGameResponse, JoinGameData, JoinGameResponse},
     status::GameState,
 };
 
 use crate::{
     network::{
-        CreateGameRequest, JoinGameRequest, LeaveGameRequest, OnResponce, StartGameRequest,
+        CreateGameRequest, JoinGameRequest, LeaveGameRequest, OnResponse, StartGameRequest,
         StateRequest,
     },
     ui_utils::BigTextInput,
@@ -178,7 +178,7 @@ fn create_game(
 
 fn on_create_response(
     mut commands: Commands,
-    mut events: EventReader<OnResponce<CreateGameRequest>>,
+    mut events: EventReader<OnResponse<CreateGameRequest>>,
     mut menu_state: ResMut<MenuState>,
 ) {
     match menu_state.as_ref() {
@@ -186,9 +186,9 @@ fn on_create_response(
         _ => return,
     }
 
-    for OnResponce(response) in events.iter() {
+    for OnResponse(response) in events.iter() {
         match response {
-            CreateGameResponce::Ok {
+            CreateGameResponse::Ok {
                 game_id,
                 player_id,
                 token,
@@ -254,7 +254,7 @@ fn join_game(
 
 fn on_join_response(
     mut commands: Commands,
-    mut events: EventReader<OnResponce<JoinGameRequest>>,
+    mut events: EventReader<OnResponse<JoinGameRequest>>,
     mut menu_state: ResMut<MenuState>,
 ) {
     match menu_state.as_ref() {
@@ -262,9 +262,9 @@ fn on_join_response(
         _ => return,
     }
 
-    for OnResponce(response) in events.iter() {
+    for OnResponse(response) in events.iter() {
         match response {
-            JoinGameResponce::Ok {
+            JoinGameResponse::Ok {
                 game_id,
                 player_id,
                 token,
@@ -418,13 +418,13 @@ fn request_state(
 }
 
 fn on_state_response(
-    mut events: EventReader<OnResponce<StateRequest>>,
+    mut events: EventReader<OnResponse<StateRequest>>,
     mut lobby_status: ResMut<LobbyStatus>,
     mut menu_state: ResMut<MenuState>,
     mut next_game_state: ResMut<NextState<GameScreen>>,
     mut event_writer: EventWriter<GameStarted>,
 ) {
-    for OnResponce(game_state) in events.iter() {
+    for OnResponse(game_state) in events.iter() {
         match game_state {
             GameState::Lobby { players, can_start } => {
                 *lobby_status = LobbyStatus {

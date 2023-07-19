@@ -1,4 +1,4 @@
-//! Request and responce data structures used by both server and client.
+//! Request and response data structures used by both server and client.
 
 use http::HeaderValue;
 
@@ -55,9 +55,9 @@ pub struct CreateGameData {
     pub password: String,
 }
 
-/// Responce for [CreateGameData] request.
+/// Response for [CreateGameData] request.
 #[derive(Debug, Serialize, Deserialize)]
-pub enum CreateGameResponce {
+pub enum CreateGameResponse {
     Ok {
         game_id: GameId,
         player_id: PlayerId,
@@ -66,10 +66,10 @@ pub enum CreateGameResponce {
 }
 
 #[cfg(feature = "axum")]
-impl IntoResponse for CreateGameResponce {
+impl IntoResponse for CreateGameResponse {
     fn into_response(self) -> Response {
         let code = match self {
-            CreateGameResponce::Ok { .. } => StatusCode::OK,
+            CreateGameResponse::Ok { .. } => StatusCode::OK,
         };
         let body = serde_json::to_string(&self).unwrap();
         (code, body).into_response()
@@ -83,9 +83,9 @@ pub struct JoinGameData {
     pub password: String,
 }
 
-/// Responce for [JoinGameData] request.
+/// Response for [JoinGameData] request.
 #[derive(Debug, Serialize, Deserialize)]
-pub enum JoinGameResponce {
+pub enum JoinGameResponse {
     /// Joined successfully.
     Ok {
         game_id: GameId,
@@ -101,13 +101,13 @@ pub enum JoinGameResponce {
 }
 
 #[cfg(feature = "axum")]
-impl IntoResponse for JoinGameResponce {
+impl IntoResponse for JoinGameResponse {
     fn into_response(self) -> Response {
         let code = match &self {
-            JoinGameResponce::Ok { .. } => StatusCode::OK,
-            JoinGameResponce::NotFound => StatusCode::NOT_FOUND,
-            JoinGameResponce::InvalidPassword => StatusCode::BAD_REQUEST,
-            JoinGameResponce::TooManyPlayers => StatusCode::BAD_REQUEST,
+            JoinGameResponse::Ok { .. } => StatusCode::OK,
+            JoinGameResponse::NotFound => StatusCode::NOT_FOUND,
+            JoinGameResponse::InvalidPassword => StatusCode::BAD_REQUEST,
+            JoinGameResponse::TooManyPlayers => StatusCode::BAD_REQUEST,
         };
         let body = serde_json::to_string(&self).unwrap();
         (code, body).into_response()
@@ -132,9 +132,9 @@ pub struct PlayCardData {
     pub card: Card,
 }
 
-/// Responce to card played.
+/// Response to card played.
 #[derive(Debug, Serialize, Deserialize)]
-pub enum PlayCardResponce {
+pub enum PlayCardResponse {
     Ok,
     InvalidCard,
     NotInHand,
@@ -142,13 +142,13 @@ pub enum PlayCardResponce {
 }
 
 #[cfg(feature = "axum")]
-impl IntoResponse for PlayCardResponce {
+impl IntoResponse for PlayCardResponse {
     fn into_response(self) -> Response {
         let code = match &self {
-            PlayCardResponce::Ok => StatusCode::OK,
-            PlayCardResponce::InvalidCard => StatusCode::BAD_REQUEST,
-            PlayCardResponce::NotInHand => StatusCode::BAD_REQUEST,
-            PlayCardResponce::AuthFailed => StatusCode::UNAUTHORIZED,
+            PlayCardResponse::Ok => StatusCode::OK,
+            PlayCardResponse::InvalidCard => StatusCode::BAD_REQUEST,
+            PlayCardResponse::NotInHand => StatusCode::BAD_REQUEST,
+            PlayCardResponse::AuthFailed => StatusCode::UNAUTHORIZED,
         };
         let body = serde_json::to_string(&self).unwrap();
         (code, body).into_response()

@@ -9,7 +9,7 @@ use durak_lib::{
 };
 
 use crate::{
-    network::{OnResponce, StatusRequest},
+    network::{OnResponse, StatusRequest},
     GameScreen,
 };
 
@@ -40,11 +40,11 @@ fn request_status(
 }
 
 fn on_status_response(
-    mut response: EventReader<OnResponce<StatusRequest>>,
+    mut response: EventReader<OnResponse<StatusRequest>>,
     mut table: Query<&mut Table>,
     mut hand: Query<&mut Hand>,
 ) {
-    let Some(OnResponce(status)) = response.iter().next() else {
+    let Some(OnResponse(status)) = response.iter().next() else {
         return;
     };
 

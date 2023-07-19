@@ -33,7 +33,7 @@ impl Plugin for NetworkPlugin {
 
 /// Generic plugin that handles requests of specific type.
 ///
-/// It adds systems that handle requests and [OnResponce] event.
+/// It adds systems that handle requests and [OnResponse] event.
 struct RequestPlugin<R: MyRequest>(PhantomData<R>);
 
 impl<R: MyRequest> RequestPlugin<R> {
@@ -51,7 +51,7 @@ where
             FixedUpdate,
             (send_request::<R>, handle_responses::<R>).chain(),
         )
-        .add_event::<OnResponce<R>>();
+        .add_event::<OnResponse<R>>();
     }
 }
 
@@ -78,7 +78,7 @@ fn send_request<R: MyRequest + Component>(
 fn handle_responses<R: MyRequest + Component>(
     mut commands: Commands,
     results: Query<(Entity, &ReqwestBytesResult), With<R>>,
-    mut event_writer: EventWriter<OnResponce<R>>,
+    mut event_writer: EventWriter<OnResponse<R>>,
 ) {
     // TODO: notify on error
     for (entity, res) in results.iter() {
@@ -88,7 +88,7 @@ fn handle_responses<R: MyRequest + Component>(
         let Ok(response) = serde_json::from_str(str) else {
             continue;
         };
-        event_writer.send(OnResponce(response));
+        event_writer.send(OnResponse(response));
         commands.entity(entity).despawn_recursive();
     }
 }
@@ -99,7 +99,7 @@ pub trait MyRequest {
     const URL: &'static str = "http://127.0.0.1:3000";
 
     /// Type that will be returned by the server.
-    type Responce: Debug + DeserializeOwned + Send + Sync;
+    type Response: Debug + DeserializeOwned + Send + Sync;
 
     /// Type that will be serialized into query params.
     type Query: Serialize;
@@ -117,6 +117,6 @@ pub trait MyRequest {
     }
 }
 
-/// Event that is being fired when responce for `R` has arrived.
+/// Event that is being fired when response for `R` has arrived.
 #[derive(Debug, Event)]
-pub struct OnResponce<R: MyRequest>(pub R::Responce);
+pub struct OnResponse<R: MyRequest>(pub R::Response);

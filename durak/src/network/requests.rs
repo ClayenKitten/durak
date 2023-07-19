@@ -5,7 +5,7 @@ use bevy_mod_reqwest::reqwest::{
 };
 use durak_lib::{
     game::card::Card,
-    network::{AuthHeader, CreateGameData, CreateGameResponce, JoinGameData, JoinGameResponce},
+    network::{AuthHeader, CreateGameData, CreateGameResponse, JoinGameData, JoinGameResponse},
     status::{GameState, GameStatus},
 };
 
@@ -15,7 +15,7 @@ use super::MyRequest;
 pub struct CreateGameRequest(pub CreateGameData);
 
 impl MyRequest for CreateGameRequest {
-    type Responce = CreateGameResponce;
+    type Response = CreateGameResponse;
 
     type Query = [(&'static str, String); 1];
 
@@ -37,7 +37,7 @@ impl MyRequest for CreateGameRequest {
 pub struct JoinGameRequest(pub JoinGameData);
 
 impl MyRequest for JoinGameRequest {
-    type Responce = JoinGameResponce;
+    type Response = JoinGameResponse;
 
     type Query = [(&'static str, String); 2];
 
@@ -62,7 +62,7 @@ impl MyRequest for JoinGameRequest {
 pub struct LeaveGameRequest(pub AuthHeader);
 
 impl MyRequest for LeaveGameRequest {
-    type Responce = ();
+    type Response = ();
 
     type Query = ();
 
@@ -86,7 +86,7 @@ impl MyRequest for LeaveGameRequest {
 pub struct StateRequest(pub AuthHeader);
 
 impl MyRequest for StateRequest {
-    type Responce = GameState;
+    type Response = GameState;
 
     type Query = ();
 
@@ -110,7 +110,7 @@ impl MyRequest for StateRequest {
 pub struct StatusRequest(pub AuthHeader);
 
 impl MyRequest for StatusRequest {
-    type Responce = GameStatus;
+    type Response = GameStatus;
 
     type Query = ();
 
@@ -134,7 +134,7 @@ impl MyRequest for StatusRequest {
 pub struct StartGameRequest(pub AuthHeader);
 
 impl MyRequest for StartGameRequest {
-    type Responce = ();
+    type Response = ();
 
     type Query = ();
 
@@ -161,7 +161,7 @@ pub struct PlayCardRequest {
 }
 
 impl MyRequest for PlayCardRequest {
-    type Responce = ();
+    type Response = ();
 
     type Query = Card;
 

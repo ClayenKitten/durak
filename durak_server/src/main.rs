@@ -6,7 +6,7 @@ use auth::{Authenticate, AuthenticateHost};
 use durak_lib::{
     game::card::Card,
     identifiers::PlayerId,
-    network::{CreateGameData, CreateGameResponce, JoinGameData, JoinGameError, JoinGameResponce},
+    network::{CreateGameData, CreateGameResponse, JoinGameData, JoinGameError, JoinGameResponse},
 };
 
 use axum::{
@@ -63,7 +63,7 @@ async fn create_game(
 
     info!("created game `{game_id}`");
 
-    CreateGameResponce::Ok {
+    CreateGameResponse::Ok {
         game_id,
         player_id,
         token: auth.generate_token(game_id, player_id),
@@ -76,16 +76,16 @@ async fn join_game(
     State(games): State<Games>,
     Query(data): Query<JoinGameData>,
 ) -> impl IntoResponse {
-    let responce = match games.with_game(data.id, |game| game.join(data.password)) {
+    let response = match games.with_game(data.id, |game| game.join(data.password)) {
         Some(Ok(val)) => Ok(val),
         Some(Err(e)) => Err(e),
         None => Err(JoinGameError::NotFound),
     };
 
-    let responce = match responce {
+    let response = match response {
         Ok(player_id) => {
             info!("joined game `{}`", data.id);
-            JoinGameResponce::Ok {
+            JoinGameResponse::Ok {
                 game_id: data.id,
                 player_id,
                 token: auth.generate_token(data.id, player_id),
@@ -93,18 +93,18 @@ async fn join_game(
         }
         Err(JoinGameError::NotFound) => {
             info!("attempted to join nonexisting game `{}`", data.id);
-            JoinGameResponce::NotFound
+            JoinGameResponse::NotFound
         }
         Err(JoinGameError::InvalidPassword) => {
             info!("attempted to join with wrong password `{}`", data.id);
-            JoinGameResponce::InvalidPassword
+            JoinGameResponse::InvalidPassword
         }
         Err(JoinGameError::TooManyPlayers) => {
             info!("attempted to join full game `{}`", data.id);
-            JoinGameResponce::TooManyPlayers
+            JoinGameResponse::TooManyPlayers
         }
     };
-    responce
+    response
 }
 
 /// Starts the game.
