@@ -50,6 +50,11 @@ impl Hand {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    /// Returns position of the card in hand.
+    pub fn position(&self, card: Card) -> Option<usize> {
+        self.0.iter().position(|c| *c == card)
+    }
 }
 
 impl Default for Hand {

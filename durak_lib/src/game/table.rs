@@ -105,6 +105,11 @@ impl Table {
     pub fn iter(&self) -> impl Iterator<Item = (Card, Option<Card>)> + '_ {
         self.0.iter().cloned()
     }
+
+    /// Returns position of the card on the table.
+    pub fn position(&self, card: Card) -> Option<usize> {
+        self.0.iter().position(|c| c.0 == card || c.1 == Some(card))
+    }
 }
 
 impl Default for Table {
