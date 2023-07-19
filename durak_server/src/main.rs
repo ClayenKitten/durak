@@ -30,6 +30,7 @@ async fn main() {
         .route("/join", post(join_game))
         .route("/game/start", post(start))
         .route("/game/state", get(state))
+        .route("/game/status", get(status))
         .route("/game/play", post(play_card))
         .route("/game/take", post(take))
         .route("/game/retreat", post(retreat))
@@ -121,15 +122,32 @@ async fn start(
         .unwrap_or((StatusCode::NOT_FOUND, "Game not found"))
 }
 
-/// Requests information about current [GameState](game::GameState).
+/// Requests information about current [GameState](durak_lib::status::GameState).
 ///
-/// Should be called regularly by client unless server expects action from the client.
+/// Should be called regularly before game starts or when [status] fails.
 async fn state(
     State(games): State<Games>,
     Authenticate(player): Authenticate,
 ) -> impl IntoResponse {
     games
         .with_game(player.game_id, |game| game.state().clone().into_response())
+        .unwrap_or((StatusCode::NOT_FOUND, "Game not found").into_response())
+}
+
+/// Requests information about [GameStatus](durak_lib::status::GameStatus) for the current player.
+///
+/// Should be called regularly during the game unless it is player's turn.
+async fn status(
+    State(games): State<Games>,
+    Authenticate(player): Authenticate,
+) -> impl IntoResponse {
+    games
+        .with_game(player.game_id, |game| {
+            game.status(player.player_id)
+                .clone()
+                .map(|s| s.into_response())
+                .unwrap_or((StatusCode::BAD_REQUEST, "Failed to get game's status").into_response())
+        })
         .unwrap_or((StatusCode::NOT_FOUND, "Game not found").into_response())
 }
 

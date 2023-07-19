@@ -8,7 +8,8 @@ use durak_lib::{
         table::Table,
     },
     identifiers::PlayerId,
-    network::{GameState, JoinGameError},
+    network::JoinGameError,
+    status::{GameState, GameStatus},
 };
 use rand::{thread_rng, Rng};
 
@@ -43,9 +44,27 @@ impl Game {
         }
     }
 
-    /// Current state of the game.
+    /// Returns current state of the game.
     pub fn state(&self) -> &GameState {
         &self.state
+    }
+
+    /// Generates status report for specific player.
+    pub fn status(&self, player: PlayerId) -> Option<GameStatus> {
+        let Some(ref round) = self.round else {
+            return None;
+        };
+        Some(GameStatus {
+            turn: round.turn(),
+            attacker: round.attacker,
+            defender: round.defender,
+            table: round.table.clone(),
+            hand: self
+                .players
+                .iter()
+                .find(|p| p.id == player)
+                .map(|player| player.hand.clone())?,
+        })
     }
 
     /// Attempts to join existing game with id and password.
@@ -121,9 +140,8 @@ impl Game {
             defender,
         });
         // TODO: follow game's rules about first player.
-        self.state = GameState::ExpectAction {
-            table: Table::new(),
-            player: attacker,
+        self.state = GameState::Started {
+            trump: self.trump,
             players: self.players.iter().map(|p| p.id).collect(),
         };
     }
@@ -159,11 +177,6 @@ impl Game {
         }
         if round.table.retreat() {
             round.swap_players();
-            self.state = GameState::ExpectAction {
-                players: self.players.iter().map(|p| p.id).collect(),
-                player: round.defender,
-                table: round.table.clone(),
-            };
             true
         } else {
             false
@@ -187,11 +200,6 @@ impl Game {
         for card in cards {
             player.hand.add(card);
         }
-        self.state = GameState::ExpectAction {
-            players: self.players.iter().map(|p| p.id).collect(),
-            player: round.attacker,
-            table: round.table.clone(),
-        };
         true
     }
 

@@ -15,8 +15,9 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 use crate::{
-    game::{card::Card, table::Table},
+    game::card::Card,
     identifiers::{GameId, PlayerId},
+    status::{GameState, GameStatus},
 };
 
 /// Token used to uniquely identify each player session.
@@ -154,26 +155,16 @@ impl IntoResponse for PlayCardResponce {
     }
 }
 
-/// State of the game that is known to all players.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum GameState {
-    /// Game is created. It can be started by host's command if `can_start` is true.
-    Lobby {
-        players: Vec<PlayerId>,
-        can_start: bool,
-    },
-    /// Expecting player's action.
-    ExpectAction {
-        player: PlayerId,
-        players: Vec<PlayerId>,
-        table: Table,
-    },
-    /// Game is ended.
-    Completed { win: PlayerId },
+#[cfg(feature = "axum")]
+impl IntoResponse for GameState {
+    fn into_response(self) -> Response {
+        let body = serde_json::to_string(&self).unwrap();
+        (StatusCode::OK, body).into_response()
+    }
 }
 
 #[cfg(feature = "axum")]
-impl IntoResponse for GameState {
+impl IntoResponse for GameStatus {
     fn into_response(self) -> Response {
         let body = serde_json::to_string(&self).unwrap();
         (StatusCode::OK, body).into_response()

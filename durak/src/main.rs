@@ -8,7 +8,10 @@ mod ui_utils;
 use bevy::{prelude::*, render::camera::ScalingMode};
 use bevy_egui::EguiPlugin;
 use card::CardInteractionPlugin;
-use durak_lib::game::hand::Hand;
+use durak_lib::{
+    game::{card::CardSuit, hand::Hand},
+    identifiers::PlayerId,
+};
 use main_menu::MainMenuPlugin;
 use network::NetworkPlugin;
 use round_setup::RoundSetupPlugin;
@@ -67,4 +70,12 @@ pub enum GameScreen {
     MainMenu,
     RoundSetup,
     Round,
+}
+
+#[derive(Debug, Event)]
+pub struct GameStarted {
+    /// Suit that is selected as trump for the game.
+    pub trump: CardSuit,
+    /// What player should attack first.
+    pub turn: PlayerId,
 }

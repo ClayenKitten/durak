@@ -10,15 +10,14 @@ use bevy_egui::{
 };
 use durak_lib::{
     identifiers::{GameId, PlayerId},
-    network::{
-        AuthHeader, CreateGameData, CreateGameResponce, GameState, JoinGameData, JoinGameResponce,
-    },
+    network::{AuthHeader, CreateGameData, CreateGameResponce, JoinGameData, JoinGameResponce},
+    status::GameState,
 };
 
 use crate::{
     network::{
         CreateGameRequest, JoinGameRequest, LeaveGameRequest, OnResponce, StartGameRequest,
-        StatusRequest,
+        StateRequest,
     },
     ui_utils::BigTextInput,
     GameScreen,
@@ -30,12 +29,12 @@ impl Plugin for MainMenuPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MenuState>()
             .init_resource::<LobbyStatus>()
-            .init_resource::<StatusRequestTimer>()
+            .init_resource::<StateRequestTimer>()
             .add_systems(
                 Update,
                 (
-                    request_status.run_if(resource_equals(MenuState::Lobby)),
-                    (on_create_response, on_join_response, on_status_response),
+                    request_state.run_if(resource_equals(MenuState::Lobby)),
+                    (on_create_response, on_join_response, on_state_response),
                     (
                         display_main_menu
                             .run_if(not(resource_equals(MenuState::None)))
@@ -289,7 +288,6 @@ fn display_lobby(
     mut ctx: EguiContexts,
     mut commands: Commands,
     mut menu_state: ResMut<MenuState>,
-    mut next_game_state: ResMut<NextState<GameScreen>>,
     status: Res<LobbyStatus>,
     auth: Option<Res<AuthHeader>>,
 ) {
@@ -405,22 +403,22 @@ fn player_entry(ui: &mut Ui, player: PlayerId, is_host: bool) {
         });
 }
 
-fn request_status(
+fn request_state(
     mut commands: Commands,
     time: Res<Time>,
     auth: Option<Res<AuthHeader>>,
-    mut timer: ResMut<StatusRequestTimer>,
+    mut timer: ResMut<StateRequestTimer>,
 ) {
     if let Some(auth) = auth {
         if timer.0.just_finished() {
-            commands.spawn(StatusRequest(auth.as_ref().clone()));
+            commands.spawn(StateRequest(auth.as_ref().clone()));
         }
     }
     timer.0.tick(time.delta());
 }
 
-fn on_status_response(
-    mut events: EventReader<OnResponce<StatusRequest>>,
+fn on_state_response(
+    mut events: EventReader<OnResponce<StateRequest>>,
     mut lobby_status: ResMut<LobbyStatus>,
     mut menu_state: ResMut<MenuState>,
     mut next_game_state: ResMut<NextState<GameScreen>>,
@@ -433,7 +431,7 @@ fn on_status_response(
                     can_start: *can_start,
                 };
             }
-            GameState::ExpectAction { .. } => {
+            GameState::Started { .. } => {
                 *menu_state = MenuState::None;
                 next_game_state.0 = Some(GameScreen::RoundSetup);
             }
@@ -449,9 +447,9 @@ struct LobbyStatus {
 }
 
 #[derive(Debug, Resource)]
-pub struct StatusRequestTimer(Timer);
+pub struct StateRequestTimer(Timer);
 
-impl Default for StatusRequestTimer {
+impl Default for StateRequestTimer {
     fn default() -> Self {
         let mut timer = Timer::from_seconds(5.0, TimerMode::Repeating);
         timer.tick(Duration::from_secs_f32(4.8));

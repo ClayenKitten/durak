@@ -3,8 +3,9 @@ use bevy_mod_reqwest::reqwest::{
     header::{HeaderMap, AUTHORIZATION},
     Method, Url,
 };
-use durak_lib::network::{
-    AuthHeader, CreateGameData, CreateGameResponce, GameState, JoinGameData, JoinGameResponce,
+use durak_lib::{
+    network::{AuthHeader, CreateGameData, CreateGameResponce, JoinGameData, JoinGameResponce},
+    status::{GameState, GameStatus},
 };
 
 use super::MyRequest;
@@ -81,9 +82,9 @@ impl MyRequest for LeaveGameRequest {
 }
 
 #[derive(Debug, Component)]
-pub struct StatusRequest(pub AuthHeader);
+pub struct StateRequest(pub AuthHeader);
 
-impl MyRequest for StatusRequest {
+impl MyRequest for StateRequest {
     type Responce = GameState;
 
     type Query = ();
@@ -94,6 +95,30 @@ impl MyRequest for StatusRequest {
 
     fn url(&self) -> Url {
         let url = format!("{}/game/state", Self::URL);
+        Url::parse(&url).unwrap()
+    }
+
+    fn headers(&self) -> HeaderMap {
+        let mut map = HeaderMap::new();
+        map.insert(AUTHORIZATION, self.0.into_header());
+        map
+    }
+}
+
+#[derive(Debug, Component)]
+pub struct StatusRequest(pub AuthHeader);
+
+impl MyRequest for StatusRequest {
+    type Responce = GameStatus;
+
+    type Query = ();
+
+    fn method(&self) -> Method {
+        Method::GET
+    }
+
+    fn url(&self) -> Url {
+        let url = format!("{}/game/status", Self::URL);
         Url::parse(&url).unwrap()
     }
 
