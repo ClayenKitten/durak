@@ -1,9 +1,12 @@
 //! Systems that handle user interaction with cards.
 
 use bevy::prelude::*;
-use durak_lib::{network::AuthHeader, game::{hand::Hand, card::Card}};
+use durak_lib::{
+    game::{card::Card, hand::Hand},
+    network::AuthHeader,
+};
 
-use crate::{collider, GameScreen, network::PlayCardRequest};
+use crate::{collider, network::PlayCardRequest, GameScreen};
 
 pub struct CardInteractionPlugin;
 
