@@ -2,6 +2,7 @@ mod card;
 mod collider;
 mod main_menu;
 mod network;
+mod round;
 mod round_setup;
 mod ui_utils;
 
@@ -14,6 +15,7 @@ use durak_lib::{
 };
 use main_menu::MainMenuPlugin;
 use network::NetworkPlugin;
+use round::RoundPlugin;
 use round_setup::RoundSetupPlugin;
 
 fn main() {
@@ -36,6 +38,7 @@ fn main() {
         .add_state::<GameScreen>()
         .add_plugins(MainMenuPlugin)
         .add_plugins(RoundSetupPlugin)
+        .add_plugins(RoundPlugin)
         .add_plugins(CardInteractionPlugin)
         .add_plugins(NetworkPlugin)
         .add_systems(Startup, startup)
