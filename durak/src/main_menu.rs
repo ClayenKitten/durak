@@ -20,7 +20,7 @@ use crate::{
         StateRequest,
     },
     ui_utils::BigTextInput,
-    GameScreen,
+    GameScreen, GameStarted,
 };
 
 pub struct MainMenuPlugin;
@@ -422,6 +422,7 @@ fn on_state_response(
     mut lobby_status: ResMut<LobbyStatus>,
     mut menu_state: ResMut<MenuState>,
     mut next_game_state: ResMut<NextState<GameScreen>>,
+    mut event_writer: EventWriter<GameStarted>,
 ) {
     for OnResponce(game_state) in events.iter() {
         match game_state {
@@ -431,9 +432,13 @@ fn on_state_response(
                     can_start: *can_start,
                 };
             }
-            GameState::Started { .. } => {
+            GameState::Started { trump, players } => {
                 *menu_state = MenuState::None;
                 next_game_state.0 = Some(GameScreen::RoundSetup);
+                event_writer.send(GameStarted {
+                    trump: *trump,
+                    players: players.clone(),
+                });
             }
             _ => continue,
         }

@@ -18,6 +18,7 @@ use round_setup::RoundSetupPlugin;
 
 fn main() {
     App::new()
+        .add_event::<GameStarted>()
         .add_plugins(
             DefaultPlugins
                 .set(ImagePlugin::default_nearest())
@@ -76,6 +77,6 @@ pub enum GameScreen {
 pub struct GameStarted {
     /// Suit that is selected as trump for the game.
     pub trump: CardSuit,
-    /// What player should attack first.
-    pub turn: PlayerId,
+    /// Players that play the game.
+    pub players: Vec<PlayerId>,
 }
