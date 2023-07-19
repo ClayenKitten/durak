@@ -44,10 +44,6 @@ pub struct Player {
     pub is_controlled: bool,
 }
 
-/// Marker component for card that is discarded.
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Discarded;
-
 fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {
