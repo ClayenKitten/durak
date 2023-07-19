@@ -30,6 +30,26 @@ impl Hand {
             None => false,
         }
     }
+
+    /// Returns `true` if hand contains provided card.
+    pub fn contains(&self, card: Card) -> bool {
+        self.0.contains(&card)
+    }
+
+    /// Iterates over cards in hand.
+    pub fn iter(&self) -> impl Iterator<Item = Card> + '_ {
+        self.0.iter().copied()
+    }
+
+    /// Returns number of cards in hand.
+    pub fn count(&self) -> usize {
+        self.0.len()
+    }
+
+    /// Returns `true` if hand is empty.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
 }
 
 impl Default for Hand {
