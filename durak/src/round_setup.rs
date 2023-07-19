@@ -1,16 +1,11 @@
 //! Contains all data and logic used to setup new round.
 
-use std::f32::consts::FRAC_PI_2;
-
 use bevy::prelude::*;
-use durak_lib::game::card::{Card, CardRank, CardSuit};
-use rand::seq::SliceRandom;
-use strum::IntoEnumIterator;
+use durak_lib::game::{card::CardSuit, deck::Deck, table::Table};
 
 use crate::{
-    card::{CardData, Covered},
-    round::{Table, Trump},
-    Deck, GameScreen, Hand, Player,
+    card::{cover::Covered, CardData, CardMapping},
+    GameScreen, Hand, Player,
 };
 
 pub struct RoundSetupPlugin;
@@ -24,9 +19,6 @@ impl Plugin for RoundSetupPlugin {
                 (
                     (
                         (spawn_deck, spawn_table).run_if(in_state(SetupPhase::CreateDeck)),
-                        shuffle_deck.run_if(in_state(SetupPhase::ShuffleDeck)),
-                        pick_trump.run_if(in_state(SetupPhase::PickTrump)),
-                        deal_cards.run_if(in_state(SetupPhase::DealCards)),
                         uncover_player_cards.run_if(in_state(SetupPhase::UncoverPlayerCards)),
                     ),
                     advance_setup_phase,
@@ -41,9 +33,6 @@ impl Plugin for RoundSetupPlugin {
 enum SetupPhase {
     #[default]
     CreateDeck,
-    ShuffleDeck,
-    DealCards,
-    PickTrump,
     UncoverPlayerCards,
 }
 
@@ -56,14 +45,10 @@ fn advance_setup_phase(
     current_setup_phase: Res<State<SetupPhase>>,
     mut next_setup_phase: ResMut<NextState<SetupPhase>>,
 ) {
-    use SetupPhase::*;
     if !event_reader.is_empty() {
         let next_setup = match current_setup_phase.get() {
-            CreateDeck => ShuffleDeck,
-            ShuffleDeck => DealCards,
-            DealCards => PickTrump,
-            PickTrump => UncoverPlayerCards,
-            UncoverPlayerCards => {
+            SetupPhase::CreateDeck => SetupPhase::UncoverPlayerCards,
+            SetupPhase::UncoverPlayerCards => {
                 next_game_phase.0 = Some(GameScreen::Round);
                 SetupPhase::default()
             }
@@ -88,7 +73,7 @@ fn spawn_deck(
         None,
         None,
     );
-    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    let texture_atlas = texture_atlases.add(texture_atlas);
 
     let deck_position = Vec3 {
         x: camera.single().area.min.x + CardData::WIDTH / 2. + 16.,
@@ -96,29 +81,15 @@ fn spawn_deck(
         ..default()
     };
 
-    let mut entities = Vec::with_capacity(36);
-    for suit in CardSuit::iter() {
-        for rank in CardRank::iter() {
-            let entity = commands
-                .spawn((
-                    Card { suit, rank },
-                    Covered,
-                    SpriteSheetBundle {
-                        texture_atlas: texture_atlas_handle.clone(),
-                        sprite: TextureAtlasSprite::new(CardData::BACK_SPRITE_ID),
-                        transform: Transform {
-                            translation: deck_position,
-                            rotation: Quat::default(),
-                            scale: Vec3::splat(CardData::SCALE),
-                        },
-                        ..default()
-                    },
-                ))
-                .id();
-            entities.push(entity);
-        }
-    }
-    commands.spawn(Deck(entities));
+    commands.spawn((
+        Deck::new(),
+        SpriteSheetBundle {
+            transform: Transform::from_translation(deck_position),
+            texture_atlas,
+            sprite: TextureAtlasSprite::new(CardData::BACK_SPRITE_ID),
+            ..default()
+        },
+    ));
     advance.send(AdvanceSetupPhase);
 }
 
@@ -127,71 +98,24 @@ fn spawn_table(mut commands: Commands, mut advance: EventWriter<AdvanceSetupPhas
     advance.send(AdvanceSetupPhase);
 }
 
-fn shuffle_deck(
-    mut deck: Query<&mut Deck, Added<Deck>>,
-    mut advance: EventWriter<AdvanceSetupPhase>,
-) {
-    if deck.is_empty() {
-        return;
-    }
-    let deck = &mut deck.single_mut().0;
-    deck.shuffle(&mut rand::thread_rng());
-    advance.send(AdvanceSetupPhase);
-}
-
-fn pick_trump(
-    mut commands: Commands,
-    mut deck: Query<&mut Deck, Added<Deck>>,
-    mut cards: Query<(&mut Transform, &Card)>,
-    mut advance: EventWriter<AdvanceSetupPhase>,
-) {
-    if deck.is_empty() {
-        return;
-    }
-    let deck = &mut deck.single_mut().0;
-    let trump_card = *deck
-        .first()
-        .expect("deck shouldn't be empty at the moment of choosing trump card");
-    let (mut trump_transform, trump) = cards.get_mut(trump_card).unwrap();
-    trump_transform.rotate_z(FRAC_PI_2);
-    trump_transform.translation.x += (CardData::HEIGHT - CardData::WIDTH) / 2.;
-    commands.entity(trump_card).remove::<Covered>();
-    commands.spawn(Trump(trump.suit));
-    advance.send(AdvanceSetupPhase);
-}
-
-/// Give cards to players at the beginning of the round.
-fn deal_cards(
-    mut hands: Query<&mut Hand>,
-    mut deck: Query<&mut Deck, Added<Deck>>,
-    mut advance: EventWriter<AdvanceSetupPhase>,
-) {
-    if deck.is_empty() {
-        return;
-    }
-    let deck = &mut deck.single_mut().0;
-    let mut hands: Vec<Mut<Hand>> = hands.iter_mut().collect();
-    for _ in 0..6 {
-        for hand in hands.iter_mut() {
-            let card = deck.pop().expect("deck shouldn't empty during dealing");
-            hand.add(card);
-        }
-    }
-    advance.send(AdvanceSetupPhase);
-}
-
 fn uncover_player_cards(
     mut commands: Commands,
     player: Query<(&Player, &Hand)>,
+    card_mapping: Res<CardMapping>,
     mut advance: EventWriter<AdvanceSetupPhase>,
 ) {
     for (player, hand) in player.iter() {
         if !player.is_controlled {
             continue;
         }
-        for entity in hand.0.iter() {
-            commands.entity(*entity).remove::<Covered>();
+        for card in hand.iter() {
+            let entity = card_mapping.get(card);
+            commands.entity(entity).remove::<Covered>();
         }
     }
     advance.send(AdvanceSetupPhase);
 }
+
+/// Trump suit for a round.
+#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Trump(pub CardSuit);

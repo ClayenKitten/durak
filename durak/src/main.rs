@@ -2,13 +2,13 @@ mod card;
 mod collider;
 mod main_menu;
 mod network;
-mod round;
 mod round_setup;
 mod ui_utils;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
 use bevy_egui::EguiPlugin;
 use card::CardInteractionPlugin;
+use durak_lib::game::hand::Hand;
 use main_menu::MainMenuPlugin;
 use network::NetworkPlugin;
 use round_setup::RoundSetupPlugin;
@@ -18,52 +18,6 @@ pub struct Player {
     pub _name: String,
     pub is_controlled: bool,
 }
-
-/// Hand of the player containing all cards the player has.
-#[derive(Component, Debug, Clone, PartialEq, Eq, Default)]
-pub struct Hand(Vec<Entity>);
-
-impl Hand {
-    /// Adds card into the hand.
-    pub fn add(&mut self, card: Entity) {
-        self.0.push(card);
-    }
-
-    /// Returns number of cards in the hand.
-    pub fn count(&self) -> usize {
-        self.0.len()
-    }
-
-    /// Returns `true` if hand is empty.
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    /// Checks if card is in the hand.
-    pub fn contains(&self, card: Entity) -> bool {
-        self.0.contains(&card)
-    }
-
-    /// Removes card from hand.
-    ///
-    /// # Panics
-    ///
-    /// Panics if card is not in the hand.
-    pub fn remove(&mut self, card: Entity) {
-        let Some(index) = self.0.iter().position(|e| *e == card) else {
-            panic!(
-                "attempted to remove card `{card:?}` that is not in the hand. \
-                Cards in the hand are: {:?}",
-                self.0.as_slice(),
-            );
-        };
-        self.0.remove(index);
-    }
-}
-
-/// List of cards that are still in deck.
-#[derive(Component, Debug, Clone, PartialEq, Eq)]
-pub struct Deck(Vec<Entity>);
 
 /// Marker component for card that is discarded.
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]

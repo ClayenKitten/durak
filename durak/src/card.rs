@@ -1,30 +1,22 @@
+pub mod cover;
+pub mod interaction;
+pub mod location;
+
 use std::collections::HashMap;
 
 use bevy::prelude::*;
 use durak_lib::game::card::{Card, CardRank, CardSuit};
 use strum::IntoEnumIterator;
 
-use crate::{collider::cursor_system, round::Table, GameScreen, Hand, Player};
-
-use self::events::CardClicked;
-
 /// Plugin that handles cards logic.
 pub struct CardInteractionPlugin;
 
 impl Plugin for CardInteractionPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<events::CardClicked>()
-            .add_event::<events::CardHoverStarted>()
-            .add_event::<events::CardHoverEnded>()
-            .add_plugins(movement::CardMovementPlugin)
-            .add_systems(Startup, setup)
-            .add_systems(Update, (cover_cards, uncover_cards))
-            .add_systems(
-                Update,
-                (cursor_system, card_click)
-                    .chain()
-                    .run_if(in_state(GameScreen::Round)),
-            );
+        app.add_systems(Startup, setup)
+            .add_plugins(interaction::CardInteractionPlugin)
+            .add_plugins(location::CardLocationPlugin)
+            .add_plugins(cover::CardCoverPlugin);
     }
 }
 
@@ -51,43 +43,6 @@ impl CardMapping {
             .0
             .get(&card)
             .expect("CardMapping must contain every possible card")
-    }
-}
-
-/// Handles clicks on cards.
-fn card_click(
-    mut event_reader: EventReader<CardClicked>,
-    mut player: Query<(&Player, &mut Hand)>,
-    mut table: Query<&mut Table>,
-) {
-    let mut table = table.single_mut();
-    for CardClicked(entity) in event_reader.iter() {
-        for (player, mut hand) in player.iter_mut() {
-            if player.is_controlled && hand.contains(*entity) {
-                hand.remove(*entity);
-                table.play(*entity);
-                break;
-            }
-        }
-    }
-}
-
-/// Updates texture for every newly covered card.
-fn cover_cards(mut query: Query<&mut TextureAtlasSprite, Added<Covered>>) {
-    for mut texture in query.iter_mut() {
-        texture.index = CardData::BACK_SPRITE_ID;
-    }
-}
-
-/// Updates texture for every newly uncovered card.
-fn uncover_cards(
-    mut query: Query<(&mut TextureAtlasSprite, &Card)>,
-    mut removed: RemovedComponents<Covered>,
-) {
-    for entity in &mut removed {
-        if let Ok((mut texture, &card)) = query.get_mut(entity) {
-            texture.index = CardData::sprite_atlas_id(card);
-        }
     }
 }
 
@@ -126,120 +81,4 @@ impl CardData {
         };
         row * 14 + column
     }
-}
-
-/// Marker component for card that is covered.
-#[derive(Component, Debug, Clone, Copy)]
-pub struct Covered;
-
-pub mod movement {
-    use std::f32::consts::FRAC_PI_6;
-
-    use bevy::prelude::*;
-    use durak_lib::game::card::Card;
-
-    use crate::{card::CardData, collider::Collider, round::Table, GameScreen, Hand, Player};
-
-    /// Plugin that update location of cards.
-    pub struct CardMovementPlugin;
-
-    impl Plugin for CardMovementPlugin {
-        fn build(&self, app: &mut App) {
-            app.add_systems(
-                Update,
-                (move_to_hand, move_to_table, move_to_discard).run_if(in_state(GameScreen::Round)),
-            );
-        }
-    }
-
-    pub fn move_to_hand(
-        mut commands: Commands,
-        mut cards: Query<&mut Transform, With<Card>>,
-        hands: Query<(&Player, &Hand), Changed<Hand>>,
-        camera: Query<&OrthographicProjection>,
-    ) {
-        for (player, hand) in hands.iter() {
-            if hand.is_empty() {
-                continue;
-            }
-
-            let area = camera.single().area;
-            let y = match player.is_controlled {
-                true => area.min.y + CardData::HEIGHT / 2. - CardData::HEIGHT / 3.,
-                false => area.max.y - CardData::HEIGHT / 2. + CardData::HEIGHT / 3.,
-            };
-            for (number, entity) in hand.0.iter().enumerate() {
-                let x = card_x_location(number, hand.count(), 10.);
-                let collider = Collider(Rect::from_center_size(
-                    Vec2 { x, y },
-                    Vec2 {
-                        x: CardData::WIDTH,
-                        y: CardData::HEIGHT,
-                    },
-                ));
-                let mut card_transform = cards.get_mut(*entity).expect("card should exist");
-                card_transform.translation = Vec3::new(x, y, 0.0);
-                commands.entity(*entity).insert(collider);
-            }
-        }
-    }
-
-    fn move_to_table(
-        mut commands: Commands,
-        mut table: Query<&mut Table, Changed<Table>>,
-        mut cards: Query<&mut Transform, With<Card>>,
-    ) {
-        if table.is_empty() {
-            return;
-        }
-        let table = table.single_mut();
-
-        let occupied = table.occupied_slots();
-        for (number, slot) in table.slots().iter().enumerate().take(occupied) {
-            let x = card_x_location(number, occupied, 40.);
-            // Attacking
-            let attacking = slot.attacking.unwrap();
-            let mut transform = cards.get_mut(attacking).unwrap();
-            transform.translation = Vec3 { x, y: 0., z: 1. };
-            commands.entity(attacking).remove::<Collider>();
-            // Defending
-            if let Some(defending) = slot.defending {
-                let mut transform = cards.get_mut(defending).unwrap();
-                transform.translation = Vec3 { x, y: 0., z: 1. };
-                transform.rotation = Quat::from_rotation_z(-FRAC_PI_6);
-                commands.entity(defending).remove::<Collider>();
-            }
-        }
-    }
-
-    /// Calculates horizontal coordinate for card in hand or on table.
-    fn card_x_location(index: usize, total: usize, gap: f32) -> f32 {
-        debug_assert!(index < total);
-
-        let max_offset = {
-            let number_of_cards = (total - 1) as f32;
-            number_of_cards * CardData::WIDTH + number_of_cards * gap
-        };
-        let x = {
-            let number = index as f32;
-            let offset = number * CardData::WIDTH + number * gap;
-            offset - max_offset / 2.
-        };
-        x
-    }
-
-    fn move_to_discard() {}
-}
-
-pub mod events {
-    use bevy::prelude::*;
-
-    #[derive(Event, Clone, Copy, PartialEq, Eq)]
-    pub struct CardClicked(pub Entity);
-
-    #[derive(Event, Clone, Copy, PartialEq, Eq)]
-    pub struct CardHoverStarted(pub Entity);
-
-    #[derive(Event, Clone, Copy, PartialEq, Eq)]
-    pub struct CardHoverEnded(pub Entity);
 }
