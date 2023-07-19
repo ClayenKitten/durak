@@ -59,20 +59,6 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
         texture: asset_server.load("background.png"),
         ..default()
     });
-    commands.spawn((
-        Player {
-            _name: String::from("Me"),
-            is_controlled: true,
-        },
-        Hand::default(),
-    ));
-    commands.spawn((
-        Player {
-            _name: String::from("Not me"),
-            is_controlled: false,
-        },
-        Hand::default(),
-    ));
 }
 
 #[derive(States, Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
