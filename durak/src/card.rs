@@ -22,11 +22,25 @@ impl Plugin for CardPlugin {
 }
 
 /// Creates entities for each possible card and stores mapping in [CardMapping].
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, atlas: Res<CardTextureAtlas>) {
     let mut mapping = HashMap::with_capacity(36);
     for suit in CardSuit::iter() {
         for rank in CardRank::iter() {
-            let entity = commands.spawn(Card { suit, rank }).id();
+            let entity = commands
+                .spawn((
+                    Card { suit, rank },
+                    SpriteSheetBundle {
+                        sprite: TextureAtlasSprite::new(CardData::sprite_atlas_id(Card {
+                            suit,
+                            rank,
+                        })),
+                        texture_atlas: Handle::clone(&atlas.0),
+                        visibility: Visibility::Hidden,
+                        transform: Transform::from_scale(Vec3::splat(CardData::SCALE)),
+                        ..default()
+                    },
+                ))
+                .id();
             mapping.insert(Card { suit, rank }, entity);
         }
     }
