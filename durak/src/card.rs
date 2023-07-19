@@ -9,9 +9,9 @@ use durak_lib::game::card::{Card, CardRank, CardSuit};
 use strum::IntoEnumIterator;
 
 /// Plugin that handles cards logic.
-pub struct CardInteractionPlugin;
+pub struct CardPlugin;
 
-impl Plugin for CardInteractionPlugin {
+impl Plugin for CardPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup)
             .add_plugins(interaction::CardInteractionPlugin)

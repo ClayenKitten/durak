@@ -8,7 +8,7 @@ mod ui_utils;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
 use bevy_egui::EguiPlugin;
-use card::CardInteractionPlugin;
+use card::CardPlugin;
 use durak_lib::{
     game::{card::CardSuit, hand::Hand},
     identifiers::PlayerId,
@@ -39,7 +39,7 @@ fn main() {
         .add_plugins(MainMenuPlugin)
         .add_plugins(RoundSetupPlugin)
         .add_plugins(RoundPlugin)
-        .add_plugins(CardInteractionPlugin)
+        .add_plugins(CardPlugin)
         .add_plugins(NetworkPlugin)
         .add_systems(Startup, startup)
         .run();
