@@ -4,16 +4,11 @@ use std::time::Duration;
 
 use bevy::prelude::*;
 use durak_lib::{
-    game::{
-        card::{Card, CardSuit},
-        hand::Hand,
-        table::Table,
-    },
+    game::{card::CardSuit, hand::Hand, table::Table},
     network::AuthHeader,
 };
 
 use crate::{
-    card::{location::Location, CardMapping},
     network::{OnResponce, StatusRequest},
     GameScreen,
 };
@@ -46,11 +41,8 @@ fn request_status(
 
 fn on_status_response(
     mut response: EventReader<OnResponce<StatusRequest>>,
-    mut commands: Commands,
     mut table: Query<&mut Table>,
     mut hand: Query<&mut Hand>,
-    cards: Query<Entity, (With<Card>, With<Location>)>,
-    mapping: Res<CardMapping>,
 ) {
     let Some(OnResponce(status)) = response.iter().next() else {
         return;
@@ -61,21 +53,6 @@ fn on_status_response(
 
     let mut table = table.single_mut();
     *table = status.table.clone();
-
-    for card in cards.iter() {
-        commands.entity(card).remove::<Location>();
-    }
-    for card in status.hand.iter() {
-        commands
-            .entity(mapping.get(card))
-            .insert(Location::PlayerHand);
-    }
-    for card in status.table.iter() {
-        commands.entity(mapping.get(card.0)).insert(Location::Table);
-        if let Some(card) = card.1 {
-            commands.entity(mapping.get(card)).insert(Location::Table);
-        }
-    }
 }
 
 #[derive(Debug, Resource)]
