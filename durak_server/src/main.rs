@@ -18,12 +18,13 @@ use axum::{
 };
 use state::{Auth, Games};
 use std::net::SocketAddr;
+use tracing::{info, Level};
 
 use crate::state::AppState;
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt().with_max_level(Level::INFO).init();
 
     let app = Router::new()
         .route("/create", post(create_game))
@@ -39,7 +40,7 @@ async fn main() {
         .with_state(AppState::new());
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
-    tracing::debug!("listening on {}", addr);
+    info!("listening on {}", addr);
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
@@ -60,7 +61,7 @@ async fn create_game(
     let game_id = games.create(data.password);
     let player_id = PlayerId::new(0);
 
-    tracing::debug!("created game `{game_id}`");
+    info!("created game `{game_id}`");
 
     CreateGameResponce::Ok {
         game_id,
@@ -83,7 +84,7 @@ async fn join_game(
 
     let responce = match responce {
         Ok(player_id) => {
-            tracing::debug!("joined game `{}`", data.id);
+            info!("joined game `{}`", data.id);
             JoinGameResponce::Ok {
                 game_id: data.id,
                 player_id,
@@ -91,15 +92,15 @@ async fn join_game(
             }
         }
         Err(JoinGameError::NotFound) => {
-            tracing::debug!("attempted to join nonexisting game `{}`", data.id);
+            info!("attempted to join nonexisting game `{}`", data.id);
             JoinGameResponce::NotFound
         }
         Err(JoinGameError::InvalidPassword) => {
-            tracing::debug!("attempted to join with wrong password`{}`", data.id);
+            info!("attempted to join with wrong password `{}`", data.id);
             JoinGameResponce::InvalidPassword
         }
         Err(JoinGameError::TooManyPlayers) => {
-            tracing::debug!("attempted to join full game `{}`", data.id);
+            info!("attempted to join full game `{}`", data.id);
             JoinGameResponce::TooManyPlayers
         }
     };
@@ -116,7 +117,7 @@ async fn start(
     games
         .with_game(player.game_id, |game| {
             game.start();
-            tracing::debug!("Started game `{}`", player.game_id);
+            info!("Started game `{}`", player.game_id);
             (StatusCode::OK, "Ok")
         })
         .unwrap_or((StatusCode::NOT_FOUND, "Game not found"))
@@ -205,10 +206,9 @@ async fn retreat(
 async fn leave(State(games): State<Games>, Authenticate(player): Authenticate) {
     games.with_game(player.game_id, |game| {
         if game.remove_player(player.player_id) {
-            tracing::debug!(
+            info!(
                 "player #{} left the game `{}`",
-                player.player_id,
-                player.game_id
+                player.player_id, player.game_id
             );
         }
     });
