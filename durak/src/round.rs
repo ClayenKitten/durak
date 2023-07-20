@@ -1,4 +1,5 @@
 mod setup;
+mod ui;
 
 use std::time::Duration;
 
@@ -13,6 +14,8 @@ use crate::{
     GameScreen,
 };
 
+use self::ui::display_ui;
+
 /// Plugin that handles ongoing game management.
 pub struct RoundPlugin;
 
@@ -22,7 +25,8 @@ impl Plugin for RoundPlugin {
             .init_resource::<StatusRequestTimer>()
             .add_systems(
                 Update,
-                (request_status, on_status_response).run_if(in_state(GameScreen::Round)),
+                (request_status, on_status_response, display_ui)
+                    .run_if(in_state(GameScreen::Round)),
             );
     }
 }
