@@ -27,7 +27,9 @@ impl Plugin for NetworkPlugin {
             .add_plugins(RequestPlugin::<StateRequest>::new())
             .add_plugins(RequestPlugin::<StatusRequest>::new())
             .add_plugins(RequestPlugin::<StartGameRequest>::new())
-            .add_plugins(RequestPlugin::<PlayCardRequest>::new());
+            .add_plugins(RequestPlugin::<PlayCardRequest>::new())
+            .add_plugins(RequestPlugin::<TakeRequest>::new())
+            .add_plugins(RequestPlugin::<RetreatRequest>::new());
     }
 }
 

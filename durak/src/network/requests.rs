@@ -184,3 +184,51 @@ impl MyRequest for PlayCardRequest {
         map
     }
 }
+
+#[derive(Debug, Component)]
+pub struct TakeRequest(pub AuthHeader);
+
+impl MyRequest for TakeRequest {
+    type Response = ();
+
+    type Query = ();
+
+    fn method(&self) -> Method {
+        Method::POST
+    }
+
+    fn url(&self) -> Url {
+        let url = format!("{}/game/take", Self::URL);
+        Url::parse(&url).unwrap()
+    }
+
+    fn headers(&self) -> HeaderMap {
+        let mut map = HeaderMap::new();
+        map.insert(AUTHORIZATION, self.0.into_header());
+        map
+    }
+}
+
+#[derive(Debug, Component)]
+pub struct RetreatRequest(pub AuthHeader);
+
+impl MyRequest for RetreatRequest {
+    type Response = ();
+
+    type Query = ();
+
+    fn method(&self) -> Method {
+        Method::POST
+    }
+
+    fn url(&self) -> Url {
+        let url = format!("{}/game/retreat", Self::URL);
+        Url::parse(&url).unwrap()
+    }
+
+    fn headers(&self) -> HeaderMap {
+        let mut map = HeaderMap::new();
+        map.insert(AUTHORIZATION, self.0.into_header());
+        map
+    }
+}
