@@ -19,7 +19,7 @@ use crate::{
         CreateGameRequest, JoinGameRequest, LeaveGameRequest, OnResponse, StartGameRequest,
         StateRequest,
     },
-    ui_utils::BigTextInput,
+    utils::ui::{BigTextInput, BUTTON_SIZE, MARGIN},
     GameScreen, GameStarted,
 };
 
@@ -110,9 +110,6 @@ fn display_main_menu(
         *menu_state = next_state;
     }
 }
-
-const BUTTON_SIZE: Vec2 = Vec2::new(400., 100.);
-const MARGIN: f32 = 50.;
 
 fn main_menu(ui: &mut Ui, next_state: &mut Option<MenuState>, mut exit: EventWriter<AppExit>) {
     let height = ui.available_size().y / 2. - (BUTTON_SIZE.y * 3. + MARGIN * 2.) / 2.;

@@ -3,7 +3,7 @@ mod collider;
 mod main_menu;
 mod network;
 mod round;
-mod ui_utils;
+mod utils;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
 use bevy_egui::EguiPlugin;
