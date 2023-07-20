@@ -168,9 +168,19 @@ impl Game {
         };
 
         if round.attacker == player_id {
-            player.hand.remove(card) && round.table.attack(card)
+            if player.hand.contains(card) && round.table.attack(card) {
+                player.hand.remove(card);
+                true
+            } else {
+                false
+            }
         } else if round.defender == player_id {
-            player.hand.remove(card) && round.table.defend(card, self.trump)
+            if player.hand.contains(card) && round.table.defend(card, self.trump) {
+                player.hand.remove(card);
+                true
+            } else {
+                false
+            }
         } else {
             false
         }
