@@ -164,7 +164,10 @@ async fn play_card(
     games
         .with_game(player.game_id, |game| {
             if game.play_card(player.player_id, card) {
-                info!("card played by player #{} in game `{}`", player.player_id, player.game_id);
+                info!(
+                    "card played by player #{} in game `{}`",
+                    player.player_id, player.game_id
+                );
                 StatusCode::OK
             } else {
                 StatusCode::BAD_REQUEST
@@ -180,7 +183,10 @@ async fn take(State(games): State<Games>, Authenticate(player): Authenticate) ->
     games
         .with_game(player.game_id, |game| {
             if game.take(player.player_id) {
-                info!("Cards are taken by player #{} in game `{}`", player.player_id, player.game_id);
+                info!(
+                    "Cards are taken by player #{} in game `{}`",
+                    player.player_id, player.game_id
+                );
                 StatusCode::OK
             } else {
                 StatusCode::BAD_REQUEST
@@ -199,7 +205,10 @@ async fn retreat(
     games
         .with_game(player.game_id, |game| {
             if game.retreat(player.player_id) {
-                info!("Player #{} retreated in game `{}`", player.player_id, player.game_id);
+                info!(
+                    "Player #{} retreated in game `{}`",
+                    player.player_id, player.game_id
+                );
                 StatusCode::OK
             } else {
                 StatusCode::BAD_REQUEST
