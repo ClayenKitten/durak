@@ -195,6 +195,7 @@ fn on_create_response(
                     player_id: *player_id,
                     token: *token,
                 });
+                commands.insert_resource(IsHost(true));
                 *menu_state = MenuState::Lobby;
             }
         }
@@ -271,6 +272,7 @@ fn on_join_response(
                     player_id: *player_id,
                     token: *token,
                 });
+                commands.insert_resource(IsHost(false));
                 *menu_state = MenuState::Lobby;
             }
             _ => {
@@ -287,6 +289,7 @@ fn display_lobby(
     mut menu_state: ResMut<MenuState>,
     status: Res<LobbyStatus>,
     auth: Option<Res<AuthHeader>>,
+    is_host: Option<Res<IsHost>>,
 ) {
     let ctx = ctx.ctx_mut();
 
@@ -305,6 +308,7 @@ fn display_lobby(
                 player_id,
                 token,
             } = auth.as_ref();
+            let IsHost(is_host) = is_host.unwrap().clone();
             CentralPanel::default().show(ctx, |ui| {
                 for (_, font_id) in ui.style_mut().text_styles.iter_mut() {
                     font_id.size = 30.;
@@ -358,7 +362,7 @@ fn display_lobby(
                                     ui.add_space(ui.available_width() - BUTTON_SIZE.x);
                                     if ui
                                         .add_enabled(
-                                            status.can_start,
+                                            status.can_start && is_host,
                                             Button::new("Start").min_size(BUTTON_SIZE),
                                         )
                                         .clicked()
@@ -458,3 +462,6 @@ impl Default for StateRequestTimer {
         Self(timer)
     }
 }
+
+#[derive(Resource, Debug, Clone, Copy)]
+pub struct IsHost(bool);
