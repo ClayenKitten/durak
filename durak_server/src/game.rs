@@ -184,11 +184,13 @@ impl Game {
         let Some(ref mut round) = self.round else {
             return false;
         };
+        let attacker = round.attacker;
         if round.attacker != player_id {
             return false;
         }
         if round.table.retreat() {
             round.swap_players();
+            self.deal_cards_to_players(attacker);
             true
         } else {
             false
@@ -199,6 +201,7 @@ impl Game {
         let Some(ref mut round) = self.round else {
             return false;
         };
+        let attacker = round.attacker;
         let Some(player) = self.players.iter_mut().find(|player| player.id == player_id) else {
             return false;
         };
@@ -212,7 +215,28 @@ impl Game {
         for card in cards {
             player.hand.add(card);
         }
+        self.deal_cards_to_players(attacker);
         true
+    }
+
+    fn deal_cards_to_players(&mut self, attacker: PlayerId) {
+        let attacker = self
+            .players
+            .iter()
+            .position(|player| player.id == attacker)
+            .unwrap();
+        let count = self.players.len();
+
+        for i in (attacker..count).chain(0..attacker) {
+            let player = &mut self.players[i];
+            let additional_cards_number = 6usize.saturating_sub(player.hand.count());
+            for _ in 0..additional_cards_number {
+                let Some(card) = self.deck.take() else {
+                    break;
+                };
+                player.hand.add(card);
+            }
+        }
     }
 }
 
