@@ -338,7 +338,7 @@ fn display_lobby(
                         );
                         ui.allocate_ui_at_rect(rect, |ui| {
                             for player in status.players.iter() {
-                                player_entry(ui, *player, true);
+                                player_entry(ui, *player, is_host);
                             }
                         });
                     });
