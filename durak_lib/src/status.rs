@@ -17,10 +17,7 @@ pub enum GameState {
         can_start: bool,
     },
     /// Game has started.
-    Started {
-        trump: Card,
-        players: Vec<PlayerId>,
-    },
+    Started { trump: Card, players: Vec<PlayerId> },
     /// Game has ended.
     Completed { win: PlayerId },
 }

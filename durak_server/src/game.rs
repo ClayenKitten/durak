@@ -1,12 +1,7 @@
 //! Game state and logic.
 
 use durak_lib::{
-    game::{
-        card::Card,
-        deck::Deck,
-        hand::Hand,
-        table::Table,
-    },
+    game::{card::Card, deck::Deck, hand::Hand, table::Table},
     identifiers::PlayerId,
     network::JoinGameError,
     status::{GameState, GameStatus},
