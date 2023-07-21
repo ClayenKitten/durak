@@ -9,7 +9,7 @@ use bevy::{prelude::*, render::camera::ScalingMode};
 use bevy_egui::EguiPlugin;
 use card::CardPlugin;
 use durak_lib::{
-    game::{card::CardSuit, hand::Hand},
+    game::{card::Card, hand::Hand},
     identifiers::PlayerId,
 };
 use main_menu::MainMenuPlugin;
@@ -76,7 +76,7 @@ pub enum GameScreen {
 #[derive(Debug, Event)]
 pub struct GameStarted {
     /// Suit that is selected as trump for the game.
-    pub trump: CardSuit,
+    pub trump: Card,
     /// Players that play the game.
     pub players: Vec<PlayerId>,
 }

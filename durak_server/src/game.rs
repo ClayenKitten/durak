@@ -2,7 +2,7 @@
 
 use durak_lib::{
     game::{
-        card::{Card, CardSuit},
+        card::Card,
         deck::Deck,
         hand::Hand,
         table::Table,
@@ -11,14 +11,12 @@ use durak_lib::{
     network::JoinGameError,
     status::{GameState, GameStatus},
 };
-use rand::{thread_rng, Rng};
 
 #[derive(Debug)]
 pub struct Game {
     pub host: PlayerId,
     pub password: String,
     state: GameState,
-    trump: CardSuit,
     deck: Deck,
     players: Vec<Player>,
     round: Option<RoundState>,
@@ -30,7 +28,6 @@ impl Game {
         Self {
             host: PlayerId::new(0),
             password,
-            trump: Self::pick_trump(),
             state: GameState::Lobby {
                 players: vec![PlayerId::new(0)],
                 can_start: false,
@@ -131,6 +128,7 @@ impl Game {
                 player.hand.add(card)
             }
         }
+        let trump = self.deck.take().unwrap();
 
         let mut players = self.players.iter();
         let attacker = players
@@ -144,12 +142,13 @@ impl Game {
 
         self.round = Some(RoundState {
             table: Table::new(),
+            trump,
             attacker,
             defender,
         });
         // TODO: follow game's rules about first player.
         self.state = GameState::Started {
-            trump: self.trump,
+            trump,
             players: self.players.iter().map(|p| p.id).collect(),
         };
 
@@ -175,7 +174,7 @@ impl Game {
                 false
             }
         } else if round.defender == player_id {
-            if player.hand.contains(card) && round.table.defend(card, self.trump) {
+            if player.hand.contains(card) && round.table.defend(card, round.trump.suit) {
                 player.hand.remove(card);
                 true
             } else {
@@ -220,21 +219,12 @@ impl Game {
         }
         true
     }
-
-    fn pick_trump() -> CardSuit {
-        match thread_rng().gen_range(0..=3) {
-            0 => CardSuit::Clover,
-            1 => CardSuit::Diamond,
-            2 => CardSuit::Heart,
-            3 => CardSuit::Pike,
-            _ => unreachable!(),
-        }
-    }
 }
 
 /// State of the game that is unique to the round.
 #[derive(Debug)]
 struct RoundState {
+    pub trump: Card,
     pub table: Table,
     pub attacker: PlayerId,
     pub defender: PlayerId,

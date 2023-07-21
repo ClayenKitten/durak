@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    game::{card::CardSuit, hand::Hand, table::Table},
+    game::{card::Card, hand::Hand, table::Table},
     identifiers::PlayerId,
 };
 
@@ -18,7 +18,7 @@ pub enum GameState {
     },
     /// Game has started.
     Started {
-        trump: CardSuit,
+        trump: Card,
         players: Vec<PlayerId>,
     },
     /// Game has ended.

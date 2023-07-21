@@ -71,5 +71,5 @@ impl Default for StatusRequestTimer {
 }
 
 /// Trump suit for a round.
-#[derive(Resource, Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Component, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Trump(pub CardSuit);
