@@ -7,10 +7,10 @@ use serde::{Deserialize, Serialize};
 /// A unique identificator of the game.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct GameId(pub u64);
+pub struct GameId(pub u32);
 
 impl GameId {
-    pub fn new(id: u64) -> Self {
+    pub fn new(id: u32) -> Self {
         GameId(id)
     }
 }
@@ -27,7 +27,7 @@ impl FromStr for GameId {
             let Some(digit) = char.to_digit(16) else {
                 return Err(());
             };
-            result += digit as u64 * 16u64.pow(index as u32);
+            result += digit as u32 * 16u32.pow(index as u32);
         }
         Ok(GameId(result))
     }
