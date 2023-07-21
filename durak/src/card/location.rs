@@ -16,16 +16,37 @@ impl Plugin for CardLocationPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (update_hand_location, update_table_location).run_if(in_state(GameScreen::Round)),
+            (
+                card_visibility,
+                (update_hand_location, update_table_location).before(card_visibility),
+            )
+                .run_if(in_state(GameScreen::Round)),
         );
     }
 }
 
-/// Updates transform and visibility of each card that is contained in hand.
+/// Updates visibility of cards.
+fn card_visibility(
+    mut cards: Query<(&mut Visibility, &Card)>,
+    hand: Query<&Hand>,
+    table: Query<&Table>,
+) {
+    let hand = hand.single();
+    let table = table.single();
+    for (mut visibility, card) in cards.iter_mut() {
+        if hand.contains(*card) || table.contains(*card) {
+            *visibility = Visibility::Visible;
+        } else {
+            *visibility = Visibility::Hidden;
+        }
+    }
+}
+
+/// Updates transform of each card that is contained in hand.
 fn update_hand_location(
     mut commands: Commands,
     mapping: Res<CardMapping>,
-    mut cards: Query<(&mut Transform, &mut Visibility), With<Card>>,
+    mut cards: Query<&mut Transform, With<Card>>,
     hand: Query<&Hand, Changed<Hand>>,
     camera: Query<&OrthographicProjection>,
 ) {
@@ -38,19 +59,18 @@ fn update_hand_location(
             let collider = Collider::new(CardData::SIZE);
 
             let entity = mapping.get(card);
-            let (mut transform, mut visibility) = cards.get_mut(entity).unwrap();
+            let mut transform = cards.get_mut(entity).unwrap();
             transform.translation = Vec3::new(x, y, 0.0);
-            *visibility = Visibility::Visible;
             commands.entity(entity).insert(collider);
         }
     }
 }
 
-/// Updates transform and visibility of each card that placed on the table.
+/// Updates transform of each card that placed on the table.
 fn update_table_location(
     mut commands: Commands,
     mapping: Res<CardMapping>,
-    mut cards: Query<(&mut Transform, &mut Visibility), With<Card>>,
+    mut cards: Query<&mut Transform, With<Card>>,
     table: Query<&Table, Changed<Table>>,
 ) {
     if let Ok(table) = table.get_single() {
@@ -59,17 +79,15 @@ fn update_table_location(
             let y = 0.;
 
             let entity = mapping.get(attacking);
-            let (mut transform, mut visibility) = cards.get_mut(entity).unwrap();
+            let mut transform = cards.get_mut(entity).unwrap();
             transform.translation = Vec3::new(x, y, 0.0);
-            *visibility = Visibility::Visible;
             commands.entity(entity).remove::<Collider>();
 
             if let Some(defending) = defending {
                 let entity = mapping.get(defending);
-                let (mut transform, mut visibility) = cards.get_mut(entity).unwrap();
+                let mut transform = cards.get_mut(entity).unwrap();
                 transform.translation = Vec3::new(x, y, 1.0);
                 transform.rotation = Quat::from_rotation_z(-FRAC_PI_6);
-                *visibility = Visibility::Visible;
                 commands.entity(entity).remove::<Collider>();
             }
         }

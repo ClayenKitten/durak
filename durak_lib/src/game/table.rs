@@ -114,6 +114,11 @@ impl Table {
     pub fn position(&self, card: Card) -> Option<usize> {
         self.0.iter().position(|c| c.0 == card || c.1 == Some(card))
     }
+
+    /// Returns `true` if table contains the card.
+    pub fn contains(&self, card: Card) -> bool {
+        self.0.iter().any(|c| c.0 == card || c.1 == Some(card))
+    }
 }
 
 impl Default for Table {
