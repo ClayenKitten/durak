@@ -2,6 +2,7 @@ mod card;
 mod collider;
 mod network;
 mod round;
+mod session;
 mod ui;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
@@ -38,12 +39,6 @@ fn main() {
         .add_plugins(NetworkPlugin)
         .add_systems(Startup, startup)
         .run();
-}
-
-#[derive(Debug, Component)]
-pub struct Player {
-    pub _name: String,
-    pub is_controlled: bool,
 }
 
 fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {

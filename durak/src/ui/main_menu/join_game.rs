@@ -2,18 +2,19 @@ use bevy::prelude::*;
 use bevy_egui::egui::{Button, Vec2};
 use durak_lib::{
     identifiers::GameId,
-    network::{AuthHeader, JoinGameData, JoinGameResponse},
+    network::{JoinGameData, JoinGameResponse},
 };
 
 use crate::{
     network::{JoinGameRequest, OnResponse},
+    session::Session,
     ui::{
         utils::{BigTextInput, BUTTON_SIZE, MARGIN},
         UiContext,
     },
 };
 
-use super::{CurrentScreen, IsHost};
+use super::CurrentScreen;
 
 pub struct JoinGameScreen;
 
@@ -87,12 +88,12 @@ fn on_join_response(
                 player_id,
                 token,
             } => {
-                commands.insert_resource(AuthHeader {
-                    game_id: *game_id,
-                    player_id: *player_id,
+                commands.insert_resource(Session {
+                    id: *player_id,
+                    game: *game_id,
                     token: *token,
+                    is_host: false,
                 });
-                commands.insert_resource(IsHost(false));
                 next_menu_state.0 = Some(CurrentScreen::Lobby);
             }
             _ => {

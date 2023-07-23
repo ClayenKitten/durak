@@ -4,10 +4,11 @@ use bevy::prelude::*;
 use bevy_egui::egui::{
     Align, Button, Color32, Direction, Frame, Label, Layout, Margin, Sense, Ui, Vec2,
 };
-use durak_lib::{identifiers::PlayerId, network::AuthHeader, status::GameState};
+use durak_lib::{identifiers::PlayerId, status::GameState};
 
 use crate::{
     network::{LeaveGameRequest, OnResponse, StartGameRequest, StateRequest},
+    session::Session,
     ui::{
         utils::{BUTTON_SIZE, MARGIN},
         UiContext,
@@ -15,7 +16,7 @@ use crate::{
     GameScreen, GameStarted,
 };
 
-use super::{CurrentScreen, IsHost};
+use super::CurrentScreen;
 
 pub struct LobbyScreen;
 
@@ -26,8 +27,8 @@ impl Plugin for LobbyScreen {
             .add_systems(
                 Update,
                 (
-                    (display, request_state).run_if(resource_exists::<AuthHeader>()),
-                    display_loading.run_if(not(resource_exists::<AuthHeader>())),
+                    (display, request_state).run_if(resource_exists::<Session>()),
+                    display_loading.run_if(not(resource_exists::<Session>())),
                     on_state_response,
                 )
                     .run_if(in_state(CurrentScreen::Lobby)),
@@ -39,17 +40,9 @@ fn display(
     mut ctx: UiContext,
     mut commands: Commands,
     status: Res<LobbyStatus>,
-    auth: Res<AuthHeader>,
-    is_host: Option<Res<IsHost>>,
+    session: Res<Session>,
     mut menu_state: ResMut<NextState<CurrentScreen>>,
 ) {
-    let AuthHeader {
-        game_id,
-        player_id,
-        token,
-    } = auth.as_ref();
-    let IsHost(is_host) = *is_host.unwrap();
-
     ctx.show(|ui: &mut Ui| {
         ui.vertical_centered_justified(|ui| {
             Frame::none().fill(Color32::from_gray(15)).show(ui, |ui| {
@@ -57,7 +50,7 @@ fn display(
                     ui.allocate_exact_size(Vec2::new(ui.available_width(), 75.), Sense::hover());
                 ui.allocate_ui_at_rect(rect, |ui| {
                     ui.with_layout(Layout::centered_and_justified(Direction::TopDown), |ui| {
-                        ui.label(format!("Game #{game_id}"));
+                        ui.label(format!("Game #{}", session.game));
                     });
                 });
             });
@@ -71,7 +64,7 @@ fn display(
                 );
                 ui.allocate_ui_at_rect(rect, |ui| {
                     for player in status.players.iter() {
-                        player_entry(ui, *player, is_host);
+                        player_entry(ui, *player, session.is_host);
                     }
                 });
             });
@@ -84,26 +77,18 @@ fn display(
                         Layout::left_to_right(Align::Center),
                         |ui| {
                             if ui.add(Button::new("Leave").min_size(BUTTON_SIZE)).clicked() {
-                                commands.spawn(LeaveGameRequest(AuthHeader {
-                                    game_id: *game_id,
-                                    player_id: *player_id,
-                                    token: *token,
-                                }));
+                                commands.spawn(LeaveGameRequest(session.into_header()));
                                 menu_state.0 = Some(CurrentScreen::MainMenu);
                             }
                             ui.add_space(ui.available_width() - BUTTON_SIZE.x);
                             if ui
                                 .add_enabled(
-                                    status.can_start && is_host,
+                                    status.can_start && session.is_host,
                                     Button::new("Start").min_size(BUTTON_SIZE),
                                 )
                                 .clicked()
                             {
-                                commands.spawn(StartGameRequest(AuthHeader {
-                                    game_id: *game_id,
-                                    player_id: *player_id,
-                                    token: *token,
-                                }));
+                                commands.spawn(StartGameRequest(session.into_header()));
                             }
                         },
                     );
@@ -149,11 +134,11 @@ struct LobbyStatus {
 fn request_state(
     mut commands: Commands,
     time: Res<Time>,
-    auth: Res<AuthHeader>,
+    session: Res<Session>,
     mut timer: ResMut<StateRequestTimer>,
 ) {
     if timer.0.just_finished() {
-        commands.spawn(StateRequest(auth.as_ref().clone()));
+        commands.spawn(StateRequest(session.into_header()));
     }
     timer.0.tick(time.delta());
 }

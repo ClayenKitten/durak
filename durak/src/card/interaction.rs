@@ -1,12 +1,9 @@
 //! Systems that handle user interaction with cards.
 
 use bevy::prelude::*;
-use durak_lib::{
-    game::{card::Card, hand::Hand},
-    network::AuthHeader,
-};
+use durak_lib::game::{card::Card, hand::Hand};
 
-use crate::{collider, network::PlayCardRequest, GameScreen};
+use crate::{collider, network::PlayCardRequest, session::Session, GameScreen};
 
 pub struct CardInteractionPlugin;
 
@@ -29,7 +26,7 @@ pub fn card_click(
     mut commands: Commands,
     mut event_reader: EventReader<CardClicked>,
     mut hand: Query<&mut Hand>,
-    auth: Res<AuthHeader>,
+    session: Res<Session>,
     cards: Query<&Card>,
 ) {
     let hand = hand.single_mut();
@@ -37,7 +34,7 @@ pub fn card_click(
         let card = *cards.get(*entity).unwrap();
         if hand.contains(card) {
             commands.spawn(PlayCardRequest {
-                auth: auth.clone(),
+                auth: session.into_header(),
                 card,
             });
         }

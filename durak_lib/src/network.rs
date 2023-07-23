@@ -2,9 +2,6 @@
 
 use http::HeaderValue;
 
-#[cfg(feature = "bevy")]
-use bevy_ecs::prelude::Resource;
-
 #[cfg(feature = "axum")]
 use axum::{
     http::StatusCode,
@@ -35,7 +32,6 @@ impl Token {
 ///
 /// Should be encoded as json.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "bevy", derive(Resource))]
 pub struct AuthHeader {
     pub game_id: GameId,
     pub player_id: PlayerId,

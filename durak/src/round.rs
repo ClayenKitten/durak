@@ -4,13 +4,11 @@ mod ui;
 use std::time::Duration;
 
 use bevy::prelude::*;
-use durak_lib::{
-    game::{card::CardSuit, hand::Hand, table::Table},
-    network::AuthHeader,
-};
+use durak_lib::game::{card::CardSuit, hand::Hand, table::Table};
 
 use crate::{
     network::{OnResponse, StatusRequest},
+    session::Session,
     GameScreen,
 };
 
@@ -34,11 +32,11 @@ impl Plugin for RoundPlugin {
 fn request_status(
     mut timer: ResMut<StatusRequestTimer>,
     time: Res<Time>,
-    auth: Res<AuthHeader>,
+    session: Res<Session>,
     mut commands: Commands,
 ) {
     if timer.0.just_finished() {
-        commands.spawn(StatusRequest(auth.clone()));
+        commands.spawn(StatusRequest(session.into_header()));
     }
     timer.0.tick(time.delta());
 }

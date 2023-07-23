@@ -1,16 +1,17 @@
 use bevy::prelude::*;
 use bevy_egui::egui::{Button, Ui, Vec2};
-use durak_lib::network::{AuthHeader, CreateGameData, CreateGameResponse};
+use durak_lib::network::{CreateGameData, CreateGameResponse};
 
 use crate::{
     network::{CreateGameRequest, OnResponse},
+    session::Session,
     ui::{
         utils::{BigTextInput, BUTTON_SIZE, MARGIN},
         UiContext,
     },
 };
 
-use super::{CurrentScreen, IsHost};
+use super::CurrentScreen;
 
 pub struct CreateGameScreen;
 
@@ -73,12 +74,12 @@ fn on_create_response(
                 player_id,
                 token,
             } => {
-                commands.insert_resource(AuthHeader {
-                    game_id: *game_id,
-                    player_id: *player_id,
+                commands.insert_resource(Session {
+                    id: *player_id,
+                    game: *game_id,
                     token: *token,
+                    is_host: true,
                 });
-                commands.insert_resource(IsHost(true));
                 next_menu_state.0 = Some(CurrentScreen::Lobby);
             }
         }

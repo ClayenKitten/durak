@@ -20,9 +20,6 @@ impl Plugin for MainMenuPlugin {
     }
 }
 
-#[derive(Resource, Debug, Clone, Copy)]
-pub struct IsHost(pub bool);
-
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
 enum CurrentScreen {
     #[default]
