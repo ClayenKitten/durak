@@ -7,7 +7,7 @@ use durak_lib::network::AuthHeader;
 
 use crate::{
     network::{RetreatRequest, TakeRequest},
-    utils::ui::MARGIN,
+    ui::utils::MARGIN,
 };
 
 const BUTTON_SIZE: Vec2 = Vec2::new(50., 50.);

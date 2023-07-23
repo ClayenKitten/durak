@@ -1,20 +1,19 @@
 mod card;
 mod collider;
-mod main_menu;
 mod network;
 mod round;
-mod utils;
+mod ui;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
-use bevy_egui::EguiPlugin;
 use card::CardPlugin;
 use durak_lib::{
     game::{card::Card, hand::Hand},
     identifiers::PlayerId,
 };
-use main_menu::MainMenuPlugin;
+
 use network::NetworkPlugin;
 use round::RoundPlugin;
+use ui::UiPlugin;
 
 fn main() {
     App::new()
@@ -32,9 +31,8 @@ fn main() {
                     ..default()
                 }),
         )
-        .add_plugins(EguiPlugin)
         .add_state::<GameScreen>()
-        .add_plugins(MainMenuPlugin)
+        .add_plugins(UiPlugin)
         .add_plugins(RoundPlugin)
         .add_plugins(CardPlugin)
         .add_plugins(NetworkPlugin)
