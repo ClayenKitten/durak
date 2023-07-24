@@ -20,20 +20,19 @@ pub struct Game {
 impl Game {
     /// Creates new game with provided password set.
     pub fn new(password: String) -> Self {
-        Self {
+        let mut game = Self {
             host: PlayerId::new(0),
             password,
             state: GameState::Lobby {
-                players: vec![PlayerId::new(0)],
+                players: Vec::new(),
                 can_start: false,
             },
             deck: Deck::new(),
-            players: vec![Player {
-                id: PlayerId::new(0),
-                hand: Hand::default(),
-            }],
+            players: Vec::new(),
             round: None,
-        }
+        };
+        game.add_player();
+        game
     }
 
     /// Returns current state of the game.
