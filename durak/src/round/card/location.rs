@@ -5,9 +5,12 @@ use std::f32::consts::FRAC_PI_6;
 use bevy::prelude::*;
 use durak_lib::game::{card::Card, table::Table};
 
-use crate::{GameScreen, Hand};
+use crate::{
+    network::{OnResponse, StatusRequest},
+    GameScreen, Hand,
+};
 
-use super::{collider::Collider, CardData, CardMapping};
+use super::{collider::Collider, CardData, CardMapping, CardTextureAtlas};
 
 /// Plugin that updates location of cards.
 pub struct CardLocationPlugin;
@@ -19,6 +22,7 @@ impl Plugin for CardLocationPlugin {
             (
                 card_visibility,
                 (update_hand_location, update_table_location).before(card_visibility),
+                update_opponent_location,
             )
                 .run_if(in_state(GameScreen::Round)),
         );
@@ -91,6 +95,49 @@ fn update_table_location(
                 transform.rotation = Quat::from_rotation_z(-FRAC_PI_6);
                 commands.entity(entity).remove::<Collider>();
             }
+        }
+    }
+}
+
+#[derive(Component, Debug)]
+struct OpponentCard;
+
+/// Updates displayed opponent cards.
+fn update_opponent_location(
+    mut response: EventReader<OnResponse<StatusRequest>>,
+    mut commands: Commands,
+    opponent_cards: Query<Entity, With<OpponentCard>>,
+    camera: Query<&OrthographicProjection>,
+    texture_atlas: Res<CardTextureAtlas>,
+) {
+    let opponent_cards: Vec<Entity> = opponent_cards.iter().collect();
+
+    if let Some(OnResponse(response)) = response.iter().next() {
+        // TODO: allow more than one opponent.
+        debug_assert!(response.opponents.len() == 1);
+        let opponent = &response.opponents[0];
+
+        if opponent_cards.len() == opponent.number_of_cards as usize {
+            return;
+        } else {
+            for opponent in opponent_cards.into_iter() {
+                commands.entity(opponent).despawn();
+            }
+        }
+
+        let y = camera.single().area.max.y;
+        for i in 0..opponent.number_of_cards {
+            let x = card_x_location(i as usize, opponent.number_of_cards as usize, 10.);
+            commands.spawn((
+                OpponentCard,
+                SpriteSheetBundle {
+                    transform: Transform::from_translation(Vec3::new(x, y, 0.))
+                        .with_scale(Vec3::splat(CardData::SCALE)),
+                    texture_atlas: Handle::clone(&texture_atlas.0),
+                    sprite: TextureAtlasSprite::new(CardData::BACK_SPRITE_ID),
+                    ..default()
+                },
+            ));
         }
     }
 }
