@@ -1,4 +1,5 @@
 mod card;
+mod deck;
 mod setup;
 
 use std::time::Duration;
@@ -13,13 +14,14 @@ use crate::{
     GameScreen,
 };
 
+use self::deck::Deck;
+
 /// Plugin that handles ongoing game management.
 pub struct RoundPlugin;
 
 impl Plugin for RoundPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(setup::RoundSetupPlugin)
-            .add_plugins(card::CardPlugin)
+        app.add_plugins((setup::RoundSetupPlugin, card::CardPlugin, deck::DeckPlugin))
             .add_systems(
                 Update,
                 (
@@ -40,6 +42,7 @@ fn on_status_response(
     mut response: EventReader<OnResponse<StatusRequest>>,
     mut table: Query<&mut Table>,
     mut hand: Query<&mut Hand>,
+    mut deck: Query<&mut Deck>,
 ) {
     let Some(OnResponse(status)) = response.iter().next() else {
         return;
@@ -50,6 +53,9 @@ fn on_status_response(
 
     let mut table = table.single_mut();
     *table = status.table.clone();
+
+    let mut deck = deck.single_mut();
+    deck.left = status.deck_size;
 }
 
 /// Trump suit for a round.

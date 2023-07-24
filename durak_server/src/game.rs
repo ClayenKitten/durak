@@ -50,6 +50,7 @@ impl Game {
             attacker: round.attacker,
             defender: round.defender,
             table: round.table.clone(),
+            deck_size: self.deck.count() as u8,
             hand: self
                 .players
                 .iter()

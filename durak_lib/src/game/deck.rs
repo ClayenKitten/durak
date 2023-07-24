@@ -11,7 +11,6 @@ use super::card::{Card, CardRank, CardSuit};
 ///
 /// Deck in standard version of the game consists of 36 unique cards.
 #[derive(Debug)]
-#[cfg_attr(feature = "bevy", derive(bevy_ecs::prelude::Component))]
 pub struct Deck(Vec<Card>);
 
 impl Deck {
@@ -39,5 +38,10 @@ impl Deck {
     /// Returns `true` if deck is empty.
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+
+    /// Returns number of cards left in deck.
+    pub fn count(&self) -> usize {
+        self.0.len()
     }
 }

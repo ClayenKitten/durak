@@ -41,6 +41,8 @@ pub struct GameStatus {
     pub table: Table,
     /// Hand of the player.
     pub hand: Hand,
+    /// Number of cards left in deck.
+    pub deck_size: u8,
     /// List of opposing players.
     pub opponents: Vec<GamePlayerData>,
 }
