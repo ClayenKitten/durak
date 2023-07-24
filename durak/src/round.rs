@@ -55,7 +55,9 @@ fn on_status_response(
     *table = status.table.clone();
 
     let mut deck = deck.single_mut();
-    deck.left = status.deck_size;
+    if deck.left != status.deck_size {
+        deck.left = status.deck_size;
+    }
 }
 
 /// Trump suit for a round.

@@ -17,7 +17,10 @@ impl Plugin for DeckPlugin {
             OnEnter(GameScreen::RoundSetup),
             spawn_deck.pipe(spawn_trump_card),
         )
-        .add_systems(Update, deck_visibility.run_if(in_state(GameScreen::Round)));
+        .add_systems(
+            Update,
+            (deck_visibility, update_deck_count).run_if(in_state(GameScreen::Round)),
+        );
     }
 }
 
@@ -95,4 +98,40 @@ fn deck_visibility(
             *trump_visibility = Visibility::Hidden;
         }
     }
+}
+
+fn update_deck_count(
+    mut commands: Commands,
+    deck: Query<(Entity, &Deck, Option<&Children>), Changed<Deck>>,
+    text: Query<&Text>,
+) {
+    let Ok((deck_entity, deck, children)) = deck.get_single() else {
+        return;
+    };
+
+    if let Some(children) = children {
+        for child in children.iter() {
+            if text.contains(*child) {
+                commands.entity(*child).despawn();
+            }
+        }
+    }
+
+    let text = Text::from_section(
+        deck.left.to_string(),
+        TextStyle {
+            font_size: 50.,
+            color: Color::BLACK,
+            ..default()
+        },
+    );
+    let bundle = Text2dBundle {
+        text,
+        transform: Transform::from_translation(Vec3::new(0., -40., 0.))
+            .with_scale(Vec3::splat(1. / 3.)),
+        ..default()
+    };
+    commands.entity(deck_entity).with_children(|deck| {
+        deck.spawn(bundle);
+    });
 }
