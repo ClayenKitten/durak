@@ -4,7 +4,7 @@ use durak_lib::{
     game::{card::Card, deck::Deck, hand::Hand, table::Table},
     identifiers::PlayerId,
     network::JoinGameError,
-    status::{GameState, GameStatus, LobbyPlayerData},
+    status::{GamePlayerData, GameState, GameStatus, LobbyPlayerData},
 };
 
 #[derive(Debug)]
@@ -55,6 +55,16 @@ impl Game {
                 .iter()
                 .find(|p| p.id == player)
                 .map(|player| player.hand.clone())?,
+            opponents: self
+                .players
+                .iter()
+                .filter(|p| p.id != player)
+                .map(|player| GamePlayerData {
+                    id: player.id,
+                    name: player.name.clone(),
+                    number_of_cards: player.hand.count() as u8,
+                })
+                .collect(),
         })
     }
 
@@ -79,6 +89,7 @@ impl Game {
         let id = PlayerId::new(self.players.len() as u8);
         self.players.push(Player {
             id,
+            name: name.clone(),
             hand: Hand::default(),
         });
         if let GameState::Lobby { players, can_start } = &mut self.state {
@@ -268,5 +279,6 @@ impl RoundState {
 #[derive(Debug)]
 struct Player {
     pub id: PlayerId,
+    pub name: String,
     pub hand: Hand,
 }

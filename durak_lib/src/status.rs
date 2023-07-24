@@ -41,4 +41,13 @@ pub struct GameStatus {
     pub table: Table,
     /// Hand of the player.
     pub hand: Hand,
+    /// List of opposing players.
+    pub opponents: Vec<GamePlayerData>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GamePlayerData {
+    pub id: PlayerId,
+    pub name: String,
+    pub number_of_cards: u8,
 }
