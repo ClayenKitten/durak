@@ -203,6 +203,7 @@ impl Game {
         if round.table.retreat() {
             round.swap_players();
             self.deal_cards_to_players(attacker);
+            self.check_win();
             true
         } else {
             false
@@ -228,6 +229,7 @@ impl Game {
             player.hand.add(card);
         }
         self.deal_cards_to_players(attacker);
+        self.check_win();
         true
     }
 
@@ -247,6 +249,15 @@ impl Game {
                     break;
                 };
                 player.hand.add(card);
+            }
+        }
+    }
+
+    /// Checks if any player won the game and updates
+    fn check_win(&mut self) {
+        for player in self.players.iter() {
+            if player.hand.is_empty() && self.deck.is_empty() {
+                self.state = GameState::Completed { win: player.id };
             }
         }
     }
