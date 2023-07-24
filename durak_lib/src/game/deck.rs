@@ -35,6 +35,11 @@ impl Deck {
         self.0.pop()
     }
 
+    /// Inserts card at the bottom of the deck.
+    pub fn insert_bottom(&mut self, card: Card) {
+        self.0.insert(0, card);
+    }
+
     /// Returns `true` if deck is empty.
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()

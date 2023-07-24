@@ -135,6 +135,7 @@ impl Game {
             }
         }
         let trump = self.deck.take().unwrap();
+        self.deck.insert_bottom(trump);
 
         let mut players = self.players.iter();
         let attacker = players
