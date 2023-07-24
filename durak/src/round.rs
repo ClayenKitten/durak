@@ -1,3 +1,4 @@
+mod card;
 mod setup;
 
 use std::time::Duration;
@@ -18,6 +19,7 @@ pub struct RoundPlugin;
 impl Plugin for RoundPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(setup::RoundSetupPlugin)
+            .add_plugins(card::CardPlugin)
             .init_resource::<StatusRequestTimer>()
             .add_systems(
                 Update,

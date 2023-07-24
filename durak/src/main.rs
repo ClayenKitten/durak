@@ -1,12 +1,9 @@
-mod card;
-mod collider;
 mod network;
 mod round;
 mod session;
 mod ui;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
-use card::CardPlugin;
 use durak_lib::{
     game::{card::Card, hand::Hand},
     identifiers::PlayerId,
@@ -35,7 +32,6 @@ fn main() {
         .add_state::<GameScreen>()
         .add_plugins(UiPlugin)
         .add_plugins(RoundPlugin)
-        .add_plugins(CardPlugin)
         .add_plugins(NetworkPlugin)
         .add_systems(Startup, startup)
         .run();

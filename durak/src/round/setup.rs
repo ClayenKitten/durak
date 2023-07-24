@@ -5,12 +5,12 @@ use std::f32::consts::FRAC_PI_2;
 use bevy::prelude::*;
 use durak_lib::game::{deck::Deck, hand::Hand, table::Table};
 
-use crate::{
-    card::{CardData, CardTextureAtlas},
-    GameScreen, GameStarted,
-};
+use crate::{GameScreen, GameStarted};
 
-use super::Trump;
+use super::{
+    card::{CardData, CardTextureAtlas},
+    Trump,
+};
 
 pub struct RoundSetupPlugin;
 

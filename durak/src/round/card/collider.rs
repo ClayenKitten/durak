@@ -6,7 +6,7 @@
 use bevy::prelude::*;
 use durak_lib::game::card::Card;
 
-use crate::card::interaction::CardClicked;
+use super::interaction::CardClicked;
 
 #[derive(Component, Debug, Clone, Copy, PartialEq)]
 pub struct Collider(Rect);

@@ -1,3 +1,4 @@
+pub mod collider;
 pub mod cover;
 pub mod interaction;
 pub mod location;

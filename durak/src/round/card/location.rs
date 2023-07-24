@@ -5,9 +5,9 @@ use std::f32::consts::FRAC_PI_6;
 use bevy::prelude::*;
 use durak_lib::game::{card::Card, table::Table};
 
-use crate::{card::CardData, collider::Collider, GameScreen, Hand};
+use crate::{GameScreen, Hand};
 
-use super::CardMapping;
+use super::{collider::Collider, CardData, CardMapping};
 
 /// Plugin that updates location of cards.
 pub struct CardLocationPlugin;

@@ -3,7 +3,9 @@
 use bevy::prelude::*;
 use durak_lib::game::{card::Card, hand::Hand};
 
-use crate::{collider, network::PlayCardRequest, session::Session, GameScreen};
+use crate::{network::PlayCardRequest, session::Session, GameScreen};
+
+use super::collider::cursor_system;
 
 pub struct CardInteractionPlugin;
 
@@ -14,7 +16,7 @@ impl Plugin for CardInteractionPlugin {
             .add_event::<CardHoverEnded>()
             .add_systems(
                 Update,
-                (collider::cursor_system, card_click)
+                (cursor_system, card_click)
                     .chain()
                     .run_if(in_state(GameScreen::Round)),
             );
