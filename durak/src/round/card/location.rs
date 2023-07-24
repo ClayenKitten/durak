@@ -61,6 +61,7 @@ fn update_hand_location(
             let entity = mapping.get(card);
             let mut transform = cards.get_mut(entity).unwrap();
             transform.translation = Vec3::new(x, y, 0.0);
+            transform.rotation = Quat::from_rotation_z(0.);
             commands.entity(entity).insert(collider);
         }
     }
