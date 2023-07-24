@@ -1,6 +1,5 @@
 mod card;
 mod deck;
-mod setup;
 
 use std::time::Duration;
 
@@ -21,7 +20,8 @@ pub struct RoundPlugin;
 
 impl Plugin for RoundPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((setup::RoundSetupPlugin, card::CardPlugin, deck::DeckPlugin))
+        app.add_plugins((card::CardPlugin, deck::DeckPlugin))
+            .add_systems(OnEnter(GameScreen::Round), setup)
             .add_systems(
                 Update,
                 (
@@ -32,6 +32,11 @@ impl Plugin for RoundPlugin {
                     .run_if(in_state(GameScreen::Round)),
             );
     }
+}
+
+fn setup(mut commands: Commands) {
+    commands.spawn(Hand::default());
+    commands.spawn(Table::default());
 }
 
 fn request_status(session: Res<Session>, mut commands: Commands) {

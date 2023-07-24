@@ -58,7 +58,6 @@ fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
 pub enum GameScreen {
     #[default]
     MainMenu,
-    RoundSetup,
     Round,
 }
 

@@ -158,7 +158,7 @@ fn on_state_response(
             }
             GameState::Started { trump, players } => {
                 menu_state.0 = Some(CurrentScreen::None);
-                next_game_state.0 = Some(GameScreen::RoundSetup);
+                next_game_state.0 = Some(GameScreen::Round);
                 event_writer.send(GameStarted {
                     trump: *trump,
                     players: players.clone(),

@@ -14,7 +14,7 @@ pub struct DeckPlugin;
 impl Plugin for DeckPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            OnEnter(GameScreen::RoundSetup),
+            OnEnter(GameScreen::Round),
             spawn_deck.pipe(spawn_trump_card),
         )
         .add_systems(
