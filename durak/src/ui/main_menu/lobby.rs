@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_egui::egui::{
     Align, Button, Color32, Direction, Frame, Label, Layout, Margin, Sense, Ui, Vec2,
 };
@@ -25,17 +25,19 @@ pub struct LobbyScreen;
 
 impl Plugin for LobbyScreen {
     fn build(&self, app: &mut App) {
-        app.init_resource::<LobbyStatus>()
-            .init_resource::<StateRequestTimer>()
-            .add_systems(
-                Update,
+        app.init_resource::<LobbyStatus>().add_systems(
+            Update,
+            (
                 (
-                    (display, request_state).run_if(resource_exists::<Session>()),
-                    display_loading.run_if(not(resource_exists::<Session>())),
-                    on_state_response,
+                    display,
+                    request_state.run_if(on_timer(Duration::from_secs_f32(2.))),
                 )
-                    .run_if(in_state(CurrentScreen::Lobby)),
-            );
+                    .run_if(resource_exists::<Session>()),
+                display_loading.run_if(not(resource_exists::<Session>())),
+                on_state_response,
+            )
+                .run_if(in_state(CurrentScreen::Lobby)),
+        );
     }
 }
 
@@ -135,16 +137,8 @@ struct LobbyStatus {
     can_start: bool,
 }
 
-fn request_state(
-    mut commands: Commands,
-    time: Res<Time>,
-    session: Res<Session>,
-    mut timer: ResMut<StateRequestTimer>,
-) {
-    if timer.0.just_finished() {
-        commands.spawn(StateRequest(session.into_header()));
-    }
-    timer.0.tick(time.delta());
+fn request_state(mut commands: Commands, session: Res<Session>) {
+    commands.spawn(StateRequest(session.into_header()));
 }
 
 fn on_state_response(
@@ -172,16 +166,5 @@ fn on_state_response(
             }
             _ => continue,
         }
-    }
-}
-
-#[derive(Debug, Resource)]
-pub struct StateRequestTimer(Timer);
-
-impl Default for StateRequestTimer {
-    fn default() -> Self {
-        let mut timer = Timer::from_seconds(5.0, TimerMode::Repeating);
-        timer.tick(Duration::from_secs_f32(4.8));
-        Self(timer)
     }
 }

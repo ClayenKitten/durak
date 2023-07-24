@@ -3,7 +3,7 @@ mod setup;
 
 use std::time::Duration;
 
-use bevy::prelude::*;
+use bevy::{prelude::*, time::common_conditions::on_timer};
 use durak_lib::game::{card::CardSuit, hand::Hand, table::Table};
 
 use crate::{
@@ -20,25 +20,20 @@ impl Plugin for RoundPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(setup::RoundSetupPlugin)
             .add_plugins(card::CardPlugin)
-            .init_resource::<StatusRequestTimer>()
             .add_systems(
                 Update,
-                (request_status, on_status_response, display_ui)
+                (
+                    request_status.run_if(on_timer(Duration::from_secs_f32(0.25))),
+                    on_status_response,
+                    display_ui,
+                )
                     .run_if(in_state(GameScreen::Round)),
             );
     }
 }
 
-fn request_status(
-    mut timer: ResMut<StatusRequestTimer>,
-    time: Res<Time>,
-    session: Res<Session>,
-    mut commands: Commands,
-) {
-    if timer.0.just_finished() {
-        commands.spawn(StatusRequest(session.into_header()));
-    }
-    timer.0.tick(time.delta());
+fn request_status(session: Res<Session>, mut commands: Commands) {
+    commands.spawn(StatusRequest(session.into_header()));
 }
 
 fn on_status_response(
@@ -55,17 +50,6 @@ fn on_status_response(
 
     let mut table = table.single_mut();
     *table = status.table.clone();
-}
-
-#[derive(Debug, Resource)]
-pub struct StatusRequestTimer(Timer);
-
-impl Default for StatusRequestTimer {
-    fn default() -> Self {
-        let mut timer = Timer::from_seconds(1.0, TimerMode::Repeating);
-        timer.tick(Duration::from_secs_f32(0.5));
-        Self(timer)
-    }
 }
 
 /// Trump suit for a round.
