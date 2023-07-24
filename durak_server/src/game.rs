@@ -4,7 +4,7 @@ use durak_lib::{
     game::{card::Card, deck::Deck, hand::Hand, table::Table},
     identifiers::PlayerId,
     network::JoinGameError,
-    status::{GameState, GameStatus},
+    status::{GameState, GameStatus, LobbyPlayerData},
 };
 
 #[derive(Debug)]
@@ -19,7 +19,7 @@ pub struct Game {
 
 impl Game {
     /// Creates new game with provided password set.
-    pub fn new(password: String) -> Self {
+    pub fn new(name: String, password: String) -> Self {
         let mut game = Self {
             host: PlayerId::new(0),
             password,
@@ -31,7 +31,7 @@ impl Game {
             players: Vec::new(),
             round: None,
         };
-        game.add_player();
+        game.add_player(name);
         game
     }
 
@@ -61,18 +61,18 @@ impl Game {
     /// Attempts to join existing game with id and password.
     ///
     /// Returns [PlayerId] if successful.
-    pub fn join(&mut self, password: String) -> Result<PlayerId, JoinGameError> {
+    pub fn join(&mut self, name: String, password: String) -> Result<PlayerId, JoinGameError> {
         if self.password != password {
             return Err(JoinGameError::InvalidPassword);
         }
-        self.add_player().ok_or(JoinGameError::TooManyPlayers)
+        self.add_player(name).ok_or(JoinGameError::TooManyPlayers)
     }
 
     /// Adds new player to the game.
     ///
     /// Returns `None` if game is already full.
     /// Otherwise, returns [PlayerId] of the new player.
-    pub fn add_player(&mut self) -> Option<PlayerId> {
+    pub fn add_player(&mut self, name: String) -> Option<PlayerId> {
         if self.players.len() > 1 {
             return None;
         }
@@ -82,7 +82,7 @@ impl Game {
             hand: Hand::default(),
         });
         if let GameState::Lobby { players, can_start } = &mut self.state {
-            players.push(id);
+            players.push(LobbyPlayerData { id, name });
             *can_start = self.players.len() >= 2;
         }
         Some(id)

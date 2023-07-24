@@ -6,6 +6,7 @@ use durak_lib::{
 
 #[derive(Resource, Debug)]
 pub struct Session {
+    pub name: String,
     pub id: PlayerId,
     pub game: GameId,
     pub token: Token,

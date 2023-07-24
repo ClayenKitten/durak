@@ -58,7 +58,7 @@ async fn create_game(
     State(games): State<Games>,
     Query(data): Query<CreateGameData>,
 ) -> impl IntoResponse {
-    let game_id = games.create(data.password);
+    let game_id = games.create(data.name, data.password);
     let player_id = PlayerId::new(0);
 
     info!("created game `{game_id}`");
@@ -76,7 +76,7 @@ async fn join_game(
     State(games): State<Games>,
     Query(data): Query<JoinGameData>,
 ) -> impl IntoResponse {
-    let response = match games.with_game(data.id, |game| game.join(data.password)) {
+    let response = match games.with_game(data.id, |game| game.join(data.name, data.password)) {
         Some(Ok(val)) => Ok(val),
         Some(Err(e)) => Err(e),
         None => Err(JoinGameError::NotFound),

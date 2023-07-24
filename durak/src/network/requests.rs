@@ -17,7 +17,7 @@ pub struct CreateGameRequest(pub CreateGameData);
 impl MyRequest for CreateGameRequest {
     type Response = CreateGameResponse;
 
-    type Query = [(&'static str, String); 1];
+    type Query = [(&'static str, String); 2];
 
     fn method(&self) -> Method {
         Method::POST
@@ -29,7 +29,10 @@ impl MyRequest for CreateGameRequest {
     }
 
     fn query(&self) -> Option<Self::Query> {
-        Some([("password", self.0.password.clone())])
+        Some([
+            ("name", self.0.name.clone()),
+            ("password", self.0.password.clone()),
+        ])
     }
 }
 
@@ -39,7 +42,7 @@ pub struct JoinGameRequest(pub JoinGameData);
 impl MyRequest for JoinGameRequest {
     type Response = JoinGameResponse;
 
-    type Query = [(&'static str, String); 2];
+    type Query = [(&'static str, String); 3];
 
     fn method(&self) -> Method {
         Method::POST
@@ -53,6 +56,7 @@ impl MyRequest for JoinGameRequest {
     fn query(&self) -> Option<Self::Query> {
         Some([
             ("id", self.0.id.0.to_string()),
+            ("name", self.0.name.clone()),
             ("password", self.0.password.clone()),
         ])
     }

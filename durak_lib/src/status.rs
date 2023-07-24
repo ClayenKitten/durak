@@ -13,13 +13,19 @@ pub enum GameState {
     ///
     /// It may be started by host's command if `can_start` is true.
     Lobby {
-        players: Vec<PlayerId>,
+        players: Vec<LobbyPlayerData>,
         can_start: bool,
     },
     /// Game has started.
     Started { trump: Card, players: Vec<PlayerId> },
     /// Game has ended.
     Completed { win: PlayerId },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LobbyPlayerData {
+    pub id: PlayerId,
+    pub name: String,
 }
 
 /// Status of the ongoing game that is known to specific player.

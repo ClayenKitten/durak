@@ -48,6 +48,7 @@ impl AuthHeader {
 /// Query parameters used to create new game.
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CreateGameData {
+    pub name: String,
     pub password: String,
 }
 
@@ -76,6 +77,7 @@ impl IntoResponse for CreateGameResponse {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct JoinGameData {
     pub id: GameId,
+    pub name: String,
     pub password: String,
 }
 

@@ -39,10 +39,10 @@ impl Games {
     }
 
     /// Creates new game with provided password.
-    pub fn create(&self, password: String) -> GameId {
+    pub fn create(&self, name: String, password: String) -> GameId {
         let id = GameId::new(rand::thread_rng().gen());
         let mut games = self.0.lock().unwrap();
-        games.insert(id, Game::new(password));
+        games.insert(id, Game::new(name, password));
         id
     }
 

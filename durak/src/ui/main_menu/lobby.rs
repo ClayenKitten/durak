@@ -4,7 +4,10 @@ use bevy::prelude::*;
 use bevy_egui::egui::{
     Align, Button, Color32, Direction, Frame, Label, Layout, Margin, Sense, Ui, Vec2,
 };
-use durak_lib::{identifiers::PlayerId, status::GameState};
+use durak_lib::{
+    identifiers::PlayerId,
+    status::{GameState, LobbyPlayerData},
+};
 
 use crate::{
     network::{LeaveGameRequest, OnResponse, StartGameRequest, StateRequest},
@@ -64,7 +67,7 @@ fn display(
                 );
                 ui.allocate_ui_at_rect(rect, |ui| {
                     for player in status.players.iter() {
-                        player_entry(ui, *player, session.is_host);
+                        player_entry(ui, player.id, &player.name, session.is_host);
                     }
                 });
             });
@@ -103,7 +106,7 @@ fn display_loading(mut ctx: UiContext) {
     })
 }
 
-fn player_entry(ui: &mut Ui, player: PlayerId, is_host: bool) {
+fn player_entry(ui: &mut Ui, player: PlayerId, name: &str, is_host: bool) {
     const HEIGHT: f32 = 100.;
     Frame::none()
         .outer_margin(Margin::symmetric(MARGIN, MARGIN / 2.))
@@ -116,6 +119,7 @@ fn player_entry(ui: &mut Ui, player: PlayerId, is_host: bool) {
                     Frame::none().fill(Color32::from_gray(60)).show(ui, |ui| {
                         ui.add_sized(Vec2::splat(HEIGHT), Label::new(player.to_string()));
                     });
+                    ui.label(name);
                     if is_host {
                         ui.add_space(ui.available_width() - HEIGHT);
                         ui.add(Button::new("Kick").min_size(Vec2::splat(HEIGHT)));
@@ -127,7 +131,7 @@ fn player_entry(ui: &mut Ui, player: PlayerId, is_host: bool) {
 
 #[derive(Debug, Resource, Default)]
 struct LobbyStatus {
-    players: Vec<PlayerId>,
+    players: Vec<LobbyPlayerData>,
     can_start: bool,
 }
 

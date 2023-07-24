@@ -37,6 +37,10 @@ fn display(
         ui.vertical_centered(|ui| {
             ui.spacing_mut().item_spacing = Vec2::new(0., 10.);
 
+            ui.label("Name:");
+            ui.add(BigTextInput::new(&mut state.name));
+            ui.add_space(25.);
+
             ui.label("Password:");
             ui.add(BigTextInput::new(&mut state.password));
             ui.add_space(ui.available_height() - BUTTON_SIZE.y);
@@ -53,6 +57,7 @@ fn display(
                     .clicked()
                 {
                     commands.spawn(CreateGameRequest(CreateGameData {
+                        name: state.name.clone(),
                         password: state.password.clone(),
                     }));
                     next_state.0 = Some(CurrentScreen::Lobby);
@@ -65,6 +70,7 @@ fn display(
 fn on_create_response(
     mut commands: Commands,
     mut events: EventReader<OnResponse<CreateGameRequest>>,
+    state: Res<ScreenState>,
     mut next_menu_state: ResMut<NextState<CurrentScreen>>,
 ) {
     if let Some(OnResponse(response)) = events.iter().next() {
@@ -75,6 +81,7 @@ fn on_create_response(
                 token,
             } => {
                 commands.insert_resource(Session {
+                    name: state.name.clone(),
                     id: *player_id,
                     game: *game_id,
                     token: *token,
@@ -88,5 +95,6 @@ fn on_create_response(
 
 #[derive(Resource, Debug, Clone, Default)]
 struct ScreenState {
+    pub name: String,
     pub password: String,
 }
