@@ -1,3 +1,5 @@
+//! Ui that is used during the game.
+
 use bevy::prelude::*;
 use bevy_egui::{
     egui::{Button, CentralPanel, Frame, Vec2},

@@ -1,5 +1,4 @@
 mod setup;
-mod ui;
 
 use std::time::Duration;
 
@@ -9,10 +8,9 @@ use durak_lib::game::{card::CardSuit, hand::Hand, table::Table};
 use crate::{
     network::{OnResponse, StatusRequest},
     session::Session,
+    ui::game::display_ui,
     GameScreen,
 };
-
-use self::ui::display_ui;
 
 /// Plugin that handles ongoing game management.
 pub struct RoundPlugin;
