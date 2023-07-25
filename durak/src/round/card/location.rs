@@ -76,25 +76,31 @@ fn update_table_location(
     mut commands: Commands,
     mapping: Res<CardMapping>,
     mut cards: Query<&mut Transform, With<Card>>,
-    table: Query<&Table, Changed<Table>>,
+    table: Query<(Entity, &Table), Changed<Table>>,
 ) {
-    if let Ok(table) = table.get_single() {
-        for (attacking, defending) in table.iter() {
-            let x = card_x_location(table.position(attacking).unwrap(), table.count(), 40.);
-            let y = 0.;
+    let Ok((table_entity, table)) = table.get_single() else {
+        return;
+    };
 
-            let entity = mapping.get(attacking);
-            let mut transform = cards.get_mut(entity).unwrap();
-            transform.translation = Vec3::new(x, y, 0.0);
-            commands.entity(entity).remove::<Collider>();
+    let mut update = move |card: Card, is_defending: bool| {
+        let x = card_x_location(table.position(card).unwrap(), table.count(), 40.);
+        let y = 0.;
+        let z = if is_defending { 1.0 } else { 0.0 };
+        let angle = if is_defending { -FRAC_PI_6 } else { 0.0 };
 
-            if let Some(defending) = defending {
-                let entity = mapping.get(defending);
-                let mut transform = cards.get_mut(entity).unwrap();
-                transform.translation = Vec3::new(x, y, 1.0);
-                transform.rotation = Quat::from_rotation_z(-FRAC_PI_6);
-                commands.entity(entity).remove::<Collider>();
-            }
+        let card_entity = mapping.get(card);
+        commands.entity(table_entity).add_child(card_entity);
+
+        let mut transform = cards.get_mut(card_entity).unwrap();
+        transform.translation = Vec3 { x, y, z };
+        transform.rotation = Quat::from_rotation_z(angle);
+        commands.entity(card_entity).remove::<Collider>();
+    };
+
+    for (attacking, defending) in table.iter() {
+        update(attacking, false);
+        if let Some(defending) = defending {
+            update(defending, true);
         }
     }
 }

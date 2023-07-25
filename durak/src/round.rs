@@ -40,8 +40,8 @@ impl Plugin for RoundPlugin {
 }
 
 fn setup(mut commands: Commands) {
-    commands.spawn(Hand::default());
-    commands.spawn(Table::default());
+    commands.spawn((SpatialBundle::default(), Hand::default()));
+    commands.spawn((SpatialBundle::default(), Table::default()));
 }
 
 fn request_state(session: Res<Session>, mut commands: Commands) {
