@@ -4,3 +4,6 @@ members = [
     "durak_lib",
     "durak_server",
 ]
+
+[profile.release]
+lto = true
