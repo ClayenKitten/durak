@@ -161,7 +161,7 @@ fn on_state_response(
                 next_game_state.0 = Some(GameScreen::Round);
                 event_writer.send(GameStarted {
                     trump: *trump,
-                    players: players.clone(),
+                    opponents: players.clone(),
                 });
             }
             _ => continue,

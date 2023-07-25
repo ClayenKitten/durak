@@ -117,7 +117,7 @@ fn update_opponent_location(
         debug_assert!(response.opponents.len() == 1);
         let opponent = &response.opponents[0];
 
-        if opponent_cards.len() == opponent.number_of_cards as usize {
+        if opponent_cards.len() == opponent.cards_number as usize {
             return;
         } else {
             for opponent in opponent_cards.into_iter() {
@@ -126,8 +126,8 @@ fn update_opponent_location(
         }
 
         let y = camera.single().area.max.y;
-        for i in 0..opponent.number_of_cards {
-            let x = card_x_location(i as usize, opponent.number_of_cards as usize, 10.);
+        for i in 0..opponent.cards_number {
+            let x = card_x_location(i as usize, opponent.cards_number as usize, 10.);
             commands.spawn((
                 OpponentCard,
                 SpriteSheetBundle {

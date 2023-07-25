@@ -1,10 +1,10 @@
 //! Game state and logic.
 
 use durak_lib::{
-    game::{card::Card, deck::Deck, hand::Hand, table::Table},
+    game::{card::Card, deck::Deck, hand::Hand, player::Player, table::Table},
     identifiers::PlayerId,
     network::JoinGameError,
-    status::{GamePlayerData, GameState, GameStatus, LobbyPlayerData},
+    status::{GameState, GameStatus, LobbyPlayerData},
 };
 
 #[derive(Debug)]
@@ -60,11 +60,8 @@ impl Game {
                 .players
                 .iter()
                 .filter(|p| p.id != player)
-                .map(|player| GamePlayerData {
-                    id: player.id,
-                    name: player.name.clone(),
-                    number_of_cards: player.hand.count() as u8,
-                })
+                .cloned()
+                .map(|player| player.into())
                 .collect(),
         })
     }
@@ -156,7 +153,7 @@ impl Game {
         // TODO: follow game's rules about first player.
         self.state = GameState::Started {
             trump,
-            players: self.players.iter().map(|p| p.id).collect(),
+            players: self.players.iter().cloned().map(|p| p.into()).collect(),
         };
 
         true
@@ -287,11 +284,4 @@ impl RoundState {
             self.defender
         }
     }
-}
-
-#[derive(Debug)]
-struct Player {
-    pub id: PlayerId,
-    pub name: String,
-    pub hand: Hand,
 }

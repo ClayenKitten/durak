@@ -4,10 +4,7 @@ mod session;
 mod ui;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
-use durak_lib::{
-    game::{card::Card, hand::Hand},
-    identifiers::PlayerId,
-};
+use durak_lib::game::{card::Card, hand::Hand, player::Opponent};
 
 use network::NetworkPlugin;
 use round::RoundPlugin;
@@ -66,5 +63,5 @@ pub struct GameStarted {
     /// Suit that is selected as trump for the game.
     pub trump: Card,
     /// Players that play the game.
-    pub players: Vec<PlayerId>,
+    pub opponents: Vec<Opponent>,
 }

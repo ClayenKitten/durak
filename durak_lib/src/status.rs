@@ -2,7 +2,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    game::{card::Card, hand::Hand, table::Table},
+    game::{card::Card, hand::Hand, player::Opponent, table::Table},
     identifiers::PlayerId,
 };
 
@@ -17,7 +17,7 @@ pub enum GameState {
         can_start: bool,
     },
     /// Game has started.
-    Started { trump: Card, players: Vec<PlayerId> },
+    Started { trump: Card, players: Vec<Opponent> },
     /// Game has ended.
     Completed { win: PlayerId },
 }
@@ -44,12 +44,7 @@ pub struct GameStatus {
     /// Number of cards left in deck.
     pub deck_size: u8,
     /// List of opposing players.
-    pub opponents: Vec<GamePlayerData>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GamePlayerData {
-    pub id: PlayerId,
-    pub name: String,
-    pub number_of_cards: u8,
+    ///
+    /// Doesn't include player that requested status report.
+    pub opponents: Vec<Opponent>,
 }
