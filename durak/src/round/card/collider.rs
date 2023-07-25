@@ -31,7 +31,7 @@ pub fn cursor_system(
     window: Query<&Window>,
     camera: Query<(&Camera, &GlobalTransform), With<Camera>>,
     input: Res<Input<MouseButton>>,
-    colliders: Query<(Entity, &Transform, &Collider)>,
+    colliders: Query<(Entity, &GlobalTransform, &Collider)>,
     cards: Query<(), With<Card>>,
     mut event_writer: EventWriter<CardClicked>,
 ) {
@@ -48,7 +48,7 @@ pub fn cursor_system(
     };
 
     for (entity, transform, collider) in colliders.iter() {
-        if !collider.contains(transform.translation, mouse_position) {
+        if !collider.contains(transform.translation(), mouse_position) {
             continue;
         }
         if !input.just_pressed(MouseButton::Left) {

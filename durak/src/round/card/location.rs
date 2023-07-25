@@ -51,23 +51,29 @@ fn update_hand_location(
     mut commands: Commands,
     mapping: Res<CardMapping>,
     mut cards: Query<&mut Transform, With<Card>>,
-    hand: Query<&Hand, Changed<Hand>>,
-    camera: Query<&OrthographicProjection>,
+    hand: Query<(Entity, &Hand), Changed<Hand>>,
 ) {
-    let area = camera.single().area;
+    let Ok((hand_entity, hand)) = hand.get_single() else {
+        return;
+    };
 
-    if let Ok(hand) = hand.get_single() {
-        for card in hand.iter() {
-            let x = card_x_location(hand.position(card).unwrap(), hand.count(), 10.);
-            let y = area.min.y + CardData::HEIGHT / 2. - CardData::HEIGHT / 3.;
-            let collider = Collider::new(CardData::SIZE);
+    commands.entity(hand_entity).clear_children();
 
-            let entity = mapping.get(card);
-            let mut transform = cards.get_mut(entity).unwrap();
-            transform.translation = Vec3::new(x, y, 0.0);
-            transform.rotation = Quat::from_rotation_z(0.);
-            commands.entity(entity).insert(collider);
-        }
+    for card in hand.iter() {
+        let x = card_x_location(hand.position(card).unwrap(), hand.count(), 10.);
+        let y = 0.;
+        let z = 0.;
+        let angle = 0.;
+
+        let collider = Collider::new(CardData::SIZE);
+
+        let entity = mapping.get(card);
+        let mut transform = cards.get_mut(entity).unwrap();
+        transform.translation = Vec3 { x, y, z };
+        transform.rotation = Quat::from_rotation_z(angle);
+        commands.entity(entity).insert(collider);
+
+        commands.entity(hand_entity).add_child(entity);
     }
 }
 

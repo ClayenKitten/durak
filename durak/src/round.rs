@@ -16,7 +16,7 @@ use crate::{
     GameEnded, GameScreen,
 };
 
-use self::deck::Deck;
+use self::{card::CardData, deck::Deck};
 
 /// Plugin that handles ongoing game management.
 pub struct RoundPlugin;
@@ -39,8 +39,16 @@ impl Plugin for RoundPlugin {
     }
 }
 
-fn setup(mut commands: Commands) {
-    commands.spawn((SpatialBundle::default(), Hand::default()));
+fn setup(mut commands: Commands, camera: Query<&OrthographicProjection>) {
+    let area = camera.single().area;
+    let hand_y = area.min.y + CardData::HEIGHT / 2. - CardData::HEIGHT / 3.;
+    commands.spawn((
+        SpatialBundle {
+            transform: Transform::from_translation(Vec3::new(0., hand_y, 0.)),
+            ..default()
+        },
+        Hand::default(),
+    ));
     commands.spawn((SpatialBundle::default(), Table::default()));
 }
 
