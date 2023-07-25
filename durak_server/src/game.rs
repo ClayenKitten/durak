@@ -254,7 +254,10 @@ impl Game {
     fn check_win(&mut self) {
         for player in self.players.iter() {
             if player.hand.is_empty() && self.deck.is_empty() {
-                self.state = GameState::Completed { win: player.id };
+                self.state = GameState::Completed {
+                    winner_id: player.id,
+                    winner_name: player.name.clone(),
+                };
             }
         }
     }

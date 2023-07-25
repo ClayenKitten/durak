@@ -4,13 +4,16 @@ mod deck;
 use std::time::Duration;
 
 use bevy::{prelude::*, time::common_conditions::on_timer};
-use durak_lib::game::{card::CardSuit, hand::Hand, table::Table};
+use durak_lib::{
+    game::{card::CardSuit, hand::Hand, table::Table},
+    status::GameState,
+};
 
 use crate::{
-    network::{OnResponse, StatusRequest},
+    network::{OnResponse, StateRequest, StatusRequest},
     session::Session,
     ui::game::display_ui,
-    GameScreen,
+    GameEnded, GameScreen,
 };
 
 use self::deck::Deck;
@@ -26,7 +29,9 @@ impl Plugin for RoundPlugin {
                 Update,
                 (
                     request_status.run_if(on_timer(Duration::from_secs_f32(0.25))),
+                    request_state.run_if(on_timer(Duration::from_secs_f32(2.0))),
                     on_status_response,
+                    on_state_response,
                     display_ui,
                 )
                     .run_if(in_state(GameScreen::Round)),
@@ -39,6 +44,31 @@ fn setup(mut commands: Commands) {
     commands.spawn(Table::default());
 }
 
+fn request_state(session: Res<Session>, mut commands: Commands) {
+    commands.spawn(StateRequest(session.into_header()));
+}
+
+fn on_state_response(
+    mut response: EventReader<OnResponse<StateRequest>>,
+    mut writer: EventWriter<GameEnded>,
+) {
+    let Some(OnResponse(state)) = response.iter().last() else {
+        return;
+    };
+    match state {
+        GameState::Completed {
+            winner_id,
+            winner_name,
+        } => {
+            writer.send(GameEnded {
+                winner_id: *winner_id,
+                winner_name: winner_name.clone(),
+            });
+        }
+        _ => {}
+    }
+}
+
 fn request_status(session: Res<Session>, mut commands: Commands) {
     commands.spawn(StatusRequest(session.into_header()));
 }
@@ -49,7 +79,7 @@ fn on_status_response(
     mut hand: Query<&mut Hand>,
     mut deck: Query<&mut Deck>,
 ) {
-    let Some(OnResponse(status)) = response.iter().next() else {
+    let Some(OnResponse(status)) = response.iter().last() else {
         return;
     };
 

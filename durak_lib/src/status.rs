@@ -19,7 +19,10 @@ pub enum GameState {
     /// Game has started.
     Started { trump: Card, players: Vec<Opponent> },
     /// Game has ended.
-    Completed { win: PlayerId },
+    Completed {
+        winner_id: PlayerId,
+        winner_name: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
