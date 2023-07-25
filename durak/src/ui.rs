@@ -1,6 +1,7 @@
 pub mod game;
-pub mod main_menu;
-pub mod utils;
+mod game_end;
+mod main_menu;
+mod utils;
 
 use bevy::{ecs::system::SystemParam, prelude::*};
 use bevy_egui::{
@@ -8,13 +9,14 @@ use bevy_egui::{
     EguiContexts, EguiPlugin,
 };
 
-use self::main_menu::MainMenuPlugin;
+use self::{game_end::show_game_end_ui, main_menu::MainMenuPlugin};
 
 pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins((EguiPlugin, MainMenuPlugin));
+        app.add_plugins((EguiPlugin, MainMenuPlugin))
+            .add_systems(Update, show_game_end_ui);
     }
 }
 
