@@ -4,7 +4,10 @@ mod session;
 mod ui;
 
 use bevy::{prelude::*, render::camera::ScalingMode};
-use durak_lib::game::{card::Card, hand::Hand, player::Opponent};
+use durak_lib::{
+    game::{card::Card, hand::Hand, player::Opponent},
+    identifiers::PlayerId,
+};
 
 use network::NetworkPlugin;
 use round::RoundPlugin;
@@ -13,6 +16,7 @@ use ui::UiPlugin;
 fn main() {
     App::new()
         .add_event::<GameStarted>()
+        .add_event::<GameEnded>()
         .add_plugins(
             DefaultPlugins
                 .set(ImagePlugin::default_nearest())
@@ -58,10 +62,18 @@ pub enum GameScreen {
     Round,
 }
 
+/// Event that is sent when the game is started.
 #[derive(Debug, Event)]
 pub struct GameStarted {
     /// Suit that is selected as trump for the game.
     pub trump: Card,
     /// Players that play the game.
     pub opponents: Vec<Opponent>,
+}
+
+/// Event that is sent when the game is ended.
+#[derive(Debug, Event)]
+pub struct GameEnded {
+    pub winner_id: PlayerId,
+    pub winner_name: String,
 }
