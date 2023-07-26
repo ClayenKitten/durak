@@ -3,7 +3,7 @@
 use std::f32::consts::FRAC_PI_6;
 
 use bevy::prelude::*;
-use durak_lib::game::{card::Card, table::Table};
+use durak_lib::game::{card::Card, player::Opponent, table::Table};
 
 use crate::{
     network::{OnResponse, StatusRequest},
@@ -118,32 +118,39 @@ struct OpponentCard;
 fn update_opponent_location(
     mut response: EventReader<OnResponse<StatusRequest>>,
     mut commands: Commands,
-    opponent_cards: Query<Entity, With<OpponentCard>>,
+    opponents: Query<Entity, With<Opponent>>,
     camera: Query<&OrthographicProjection>,
     texture_atlas: Res<CardTextureAtlas>,
 ) {
-    let opponent_cards: Vec<Entity> = opponent_cards.iter().collect();
+    let Some(OnResponse(response)) = response.iter().next() else {
+        return;
+    };
 
-    if let Some(OnResponse(response)) = response.iter().next() {
-        // TODO: allow more than one opponent.
-        debug_assert!(response.opponents.len() == 1);
-        let opponent = &response.opponents[0];
+    for opponent in opponents.iter() {
+        commands.entity(opponent).despawn_recursive();
+    }
 
-        if opponent_cards.len() == opponent.cards_number as usize {
-            return;
-        } else {
-            for opponent in opponent_cards.into_iter() {
-                commands.entity(opponent).despawn();
-            }
-        }
+    // TODO: allow more than one opponent.
+    debug_assert!(response.opponents.len() == 1);
+    let opponent = &response.opponents[0];
 
-        let y = camera.single().area.max.y;
+    let y = camera.single().area.max.y;
+
+    let mut entity_commands = commands.spawn((
+        opponent.clone(),
+        SpatialBundle {
+            transform: Transform::from_translation(Vec3::new(0., y, 0.)),
+            ..default()
+        },
+    ));
+
+    entity_commands.with_children(|parent| {
         for i in 0..opponent.cards_number {
             let x = card_x_location(i as usize, opponent.cards_number as usize, 10.);
-            commands.spawn((
+            parent.spawn((
                 OpponentCard,
                 SpriteSheetBundle {
-                    transform: Transform::from_translation(Vec3::new(x, y, 0.))
+                    transform: Transform::from_translation(Vec3::new(x, 0., 0.))
                         .with_scale(Vec3::splat(CardData::SCALE)),
                     texture_atlas: Handle::clone(&texture_atlas.0),
                     sprite: TextureAtlasSprite::new(CardData::BACK_SPRITE_ID),
@@ -151,7 +158,7 @@ fn update_opponent_location(
                 },
             ));
         }
-    }
+    });
 }
 
 /// Calculates horizontal coordinate for card in player's hand or on the table.
