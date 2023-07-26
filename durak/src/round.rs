@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use bevy::{prelude::*, time::common_conditions::on_timer};
 use durak_lib::{
-    game::{card::CardSuit, hand::Hand, table::Table},
+    game::{card::CardSuit, hand::Hand, player::Opponent, table::Table},
     status::GameState,
 };
 
@@ -27,15 +27,16 @@ impl Plugin for RoundPlugin {
             .add_systems(OnEnter(GameScreen::Round), setup)
             .add_systems(
                 Update,
-                (
+                ((
                     request_status.run_if(on_timer(Duration::from_secs_f32(0.25))),
                     request_state.run_if(on_timer(Duration::from_secs_f32(2.0))),
                     on_status_response,
                     on_state_response,
                     display_ui,
                 )
-                    .run_if(in_state(GameScreen::Round)),
-            );
+                    .run_if(in_state(GameScreen::Round)),),
+            )
+            .add_systems(OnExit(GameScreen::Round), cleanup);
     }
 }
 
@@ -100,6 +101,28 @@ fn on_status_response(
     let mut deck = deck.single_mut();
     if deck.left != status.deck_size {
         deck.left = status.deck_size;
+    }
+}
+
+/// Despawns everything connected to round.
+fn cleanup(
+    mut commands: Commands,
+    deck: Query<Entity, With<Deck>>,
+    hand: Query<Entity, With<Hand>>,
+    table: Query<Entity, With<Table>>,
+    opponents: Query<Entity, With<Opponent>>,
+) {
+    if let Ok(deck) = deck.get_single() {
+        commands.entity(deck).despawn_recursive();
+    }
+    if let Ok(hand) = hand.get_single() {
+        commands.entity(hand).despawn_recursive();
+    }
+    if let Ok(table) = table.get_single() {
+        commands.entity(table).despawn_recursive();
+    }
+    for opponent in opponents.iter() {
+        commands.entity(opponent).despawn_recursive();
     }
 }
 
