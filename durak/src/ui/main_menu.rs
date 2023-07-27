@@ -3,6 +3,8 @@ mod join_game;
 mod lobby;
 mod main;
 
+use crate::GameScreen;
+
 use self::{
     create_game::CreateGameScreen, join_game::JoinGameScreen, lobby::LobbyScreen, main::MainScreen,
 };
@@ -16,8 +18,13 @@ impl Plugin for MainMenuPlugin {
             .add_plugins(MainScreen)
             .add_plugins(CreateGameScreen)
             .add_plugins(JoinGameScreen)
-            .add_plugins(LobbyScreen);
+            .add_plugins(LobbyScreen)
+            .add_systems(OnEnter(GameScreen::MainMenu), reset_screen);
     }
+}
+
+fn reset_screen(mut next_state: ResMut<NextState<CurrentScreen>>) {
+    next_state.0 = Some(CurrentScreen::MainMenu);
 }
 
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
