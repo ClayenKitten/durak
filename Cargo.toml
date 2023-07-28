@@ -6,4 +6,7 @@ members = [
 ]
 
 [profile.release]
-lto = true
+lto = "thin"
+strip = true
+codegen-units = 1
+panic = "abort"
