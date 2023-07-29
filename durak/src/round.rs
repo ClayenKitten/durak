@@ -113,13 +113,13 @@ fn cleanup(
     opponents: Query<Entity, With<Opponent>>,
 ) {
     if let Ok(deck) = deck.get_single() {
-        commands.entity(deck).despawn_recursive();
+        commands.entity(deck).despawn();
     }
     if let Ok(hand) = hand.get_single() {
-        commands.entity(hand).despawn_recursive();
+        commands.entity(hand).despawn();
     }
     if let Ok(table) = table.get_single() {
-        commands.entity(table).despawn_recursive();
+        commands.entity(table).despawn();
     }
     for opponent in opponents.iter() {
         commands.entity(opponent).despawn_recursive();
