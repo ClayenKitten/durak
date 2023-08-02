@@ -1,5 +1,6 @@
 //! Request and response data structures used by both server and client.
 
+use axum::Json;
 use http::HeaderValue;
 
 #[cfg(feature = "axum")]
@@ -68,8 +69,7 @@ impl IntoResponse for CreateGameResponse {
         let code = match self {
             CreateGameResponse::Ok { .. } => StatusCode::OK,
         };
-        let body = serde_json::to_string(&self).unwrap();
-        (code, body).into_response()
+        (code, Json(self)).into_response()
     }
 }
 
@@ -107,8 +107,7 @@ impl IntoResponse for JoinGameResponse {
             JoinGameResponse::InvalidPassword => StatusCode::BAD_REQUEST,
             JoinGameResponse::TooManyPlayers => StatusCode::BAD_REQUEST,
         };
-        let body = serde_json::to_string(&self).unwrap();
-        (code, body).into_response()
+        (code, Json(self)).into_response()
     }
 }
 
@@ -148,23 +147,20 @@ impl IntoResponse for PlayCardResponse {
             PlayCardResponse::NotInHand => StatusCode::BAD_REQUEST,
             PlayCardResponse::AuthFailed => StatusCode::UNAUTHORIZED,
         };
-        let body = serde_json::to_string(&self).unwrap();
-        (code, body).into_response()
+        (code, Json(self)).into_response()
     }
 }
 
 #[cfg(feature = "axum")]
 impl IntoResponse for GameState {
     fn into_response(self) -> Response {
-        let body = serde_json::to_string(&self).unwrap();
-        (StatusCode::OK, body).into_response()
+        (StatusCode::OK, Json(self)).into_response()
     }
 }
 
 #[cfg(feature = "axum")]
 impl IntoResponse for GameStatus {
     fn into_response(self) -> Response {
-        let body = serde_json::to_string(&self).unwrap();
-        (StatusCode::OK, body).into_response()
+        (StatusCode::OK, Json(self)).into_response()
     }
 }
