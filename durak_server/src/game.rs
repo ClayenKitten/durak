@@ -3,14 +3,11 @@
 use durak_lib::{
     game::{card::Card, deck::Deck, hand::Hand, player::Player, table::Table},
     identifiers::PlayerId,
-    network::JoinGameError,
     status::{GameState, GameStatus, LobbyPlayerData},
 };
 
 #[derive(Debug)]
 pub struct Game {
-    pub host: PlayerId,
-    pub password: String,
     state: GameState,
     deck: Deck,
     players: Vec<Player>,
@@ -19,10 +16,8 @@ pub struct Game {
 
 impl Game {
     /// Creates new game with provided password set.
-    pub fn new(name: String, password: String) -> Self {
-        let mut game = Self {
-            host: PlayerId::new(0),
-            password,
+    pub fn new() -> Self {
+        Self {
             state: GameState::Lobby {
                 players: Vec::new(),
                 can_start: false,
@@ -30,9 +25,7 @@ impl Game {
             deck: Deck::new(),
             players: Vec::new(),
             round: None,
-        };
-        game.add_player(name);
-        game
+        }
     }
 
     /// Returns current state of the game.
@@ -64,16 +57,6 @@ impl Game {
                 .map(|player| player.into())
                 .collect(),
         })
-    }
-
-    /// Attempts to join existing game with id and password.
-    ///
-    /// Returns [PlayerId] if successful.
-    pub fn join(&mut self, name: String, password: String) -> Result<PlayerId, JoinGameError> {
-        if self.password != password {
-            return Err(JoinGameError::InvalidPassword);
-        }
-        self.add_player(name).ok_or(JoinGameError::TooManyPlayers)
     }
 
     /// Adds new player to the game.

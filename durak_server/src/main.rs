@@ -6,7 +6,7 @@ use auth::{Authenticate, AuthenticateHost};
 use durak_lib::{
     game::card::Card,
     identifiers::PlayerId,
-    network::{CreateGameData, CreateGameResponse, JoinGameData, JoinGameError, JoinGameResponse},
+    network::{CreateGameData, CreateGameResponse, JoinGameData, JoinGameResponse},
 };
 
 use axum::{
@@ -58,15 +58,15 @@ async fn create_game(
     State(games): State<Games>,
     Query(data): Query<CreateGameData>,
 ) -> impl IntoResponse {
-    let game_id = games.create(data.name, data.password);
+    let game_id = games.create(data.name);
     let player_id = PlayerId::new(0);
-
+    let token = auth.generate_token(game_id, player_id);
     info!("created game `{game_id}`");
 
     CreateGameResponse::Ok {
         game_id,
         player_id,
-        token: auth.generate_token(game_id, player_id),
+        token,
     }
 }
 
@@ -76,35 +76,33 @@ async fn join_game(
     State(games): State<Games>,
     Query(data): Query<JoinGameData>,
 ) -> impl IntoResponse {
-    let response = match games.with_game(data.id, |game| game.join(data.name, data.password)) {
-        Some(Ok(val)) => Ok(val),
-        Some(Err(e)) => Err(e),
-        None => Err(JoinGameError::NotFound),
-    };
-
-    let response = match response {
-        Ok(player_id) => {
-            info!("joined game `{}`", data.id);
-            JoinGameResponse::Ok {
-                game_id: data.id,
-                player_id,
-                token: auth.generate_token(data.id, player_id),
+    games
+        .with_game(data.id, |game| {
+            if !auth.validate_password(data.id, &data.password) {
+                info!("attempted to join with wrong password `{}`", data.id);
+                return JoinGameResponse::InvalidPassword;
             }
-        }
-        Err(JoinGameError::NotFound) => {
+
+            match game.add_player(data.name) {
+                Some(player_id) => {
+                    info!("player joined game `{}`", data.id);
+                    let token = auth.generate_token(data.id, player_id);
+                    JoinGameResponse::Ok {
+                        game_id: data.id,
+                        player_id,
+                        token,
+                    }
+                }
+                None => {
+                    info!("attempted to join full game `{}`", data.id);
+                    JoinGameResponse::TooManyPlayers
+                }
+            }
+        })
+        .unwrap_or_else(|| {
             info!("attempted to join nonexisting game `{}`", data.id);
             JoinGameResponse::NotFound
-        }
-        Err(JoinGameError::InvalidPassword) => {
-            info!("attempted to join with wrong password `{}`", data.id);
-            JoinGameResponse::InvalidPassword
-        }
-        Err(JoinGameError::TooManyPlayers) => {
-            info!("attempted to join full game `{}`", data.id);
-            JoinGameResponse::TooManyPlayers
-        }
-    };
-    response
+        })
 }
 
 /// Starts the game.

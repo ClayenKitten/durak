@@ -39,10 +39,14 @@ impl Games {
     }
 
     /// Creates new game with provided password.
-    pub fn create(&self, name: String, password: String) -> GameId {
+    pub fn create(&self, name: String) -> GameId {
         let id = GameId::new(rand::thread_rng().gen());
         let mut games = self.0.lock().unwrap();
-        games.insert(id, Game::new(name, password));
+
+        let mut game = Game::new();
+        game.add_player(name);
+
+        games.insert(id, game);
         id
     }
 
@@ -62,26 +66,56 @@ impl FromRef<AppState> for Games {
 
 /// State that stores all authentication tokens and associated data.
 #[derive(Clone)]
-pub struct Auth(Arc<Mutex<HashMap<Token, (GameId, PlayerId)>>>);
+pub struct Auth {
+    passwords: Arc<Mutex<HashMap<GameId, String>>>,
+    sessions: Arc<Mutex<HashMap<Token, (GameId, PlayerId)>>>,
+}
 
 impl Auth {
+    /// Creates new auth state manager.
     fn new() -> Self {
-        let map = HashMap::with_capacity(1024);
-        Self(Arc::new(Mutex::new(map)))
+        let passwords = HashMap::with_capacity(64);
+        let sessions = HashMap::with_capacity(128);
+        Self {
+            passwords: Arc::new(Mutex::new(passwords)),
+            sessions: Arc::new(Mutex::new(sessions)),
+        }
+    }
+
+    /// Creates new password entry.
+    ///
+    /// # Panics
+    ///
+    /// Panics if called more than once for provided [GameId].
+    pub fn store_password(&self, game_id: GameId, password: String) {
+        let mut passwords = self.passwords.lock().unwrap();
+        if passwords.insert(game_id, password).is_some() {
+            panic!("Attempted to create new password entry when it is already present");
+        }
     }
 
     /// Generates new token.
     pub fn generate_token(&self, game_id: GameId, player_id: PlayerId) -> Token {
-        let mut auth = self.0.lock().unwrap();
+        let mut sessions = self.sessions.lock().unwrap();
         let token = Token::new(thread_rng().gen());
-        auth.insert(token, (game_id, player_id));
+        sessions.insert(token, (game_id, player_id));
         token
     }
 
+    /// Returns `true` if provided password matches stored one.
+    pub fn validate_password(&self, game_id: GameId, password: &str) -> bool {
+        let passwords = self.passwords.lock().unwrap();
+        if let Some(stored_password) = passwords.get(&game_id) {
+            stored_password.as_str() == password
+        } else {
+            false
+        }
+    }
+
     /// Returns `true` if provided token exists and matches provided [GameId] and [PlayerId].
-    pub fn validate(&self, token: Token, game_id: GameId, player_id: PlayerId) -> bool {
-        let auth = self.0.lock().unwrap();
-        let Some(data) = auth.get(&token) else {
+    pub fn validate_session(&self, token: Token, game_id: GameId, player_id: PlayerId) -> bool {
+        let sessions = self.sessions.lock().unwrap();
+        let Some(data) = sessions.get(&token) else {
             return false;
         };
         data.0 == game_id && data.1 == player_id
