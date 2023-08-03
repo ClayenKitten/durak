@@ -21,8 +21,7 @@ impl FromRequestParts<AppState> for Authenticate {
         parts: &mut Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
-        const REJECTION: (StatusCode, &'static str) =
-            (StatusCode::UNAUTHORIZED, "Authorization failed");
+        const REJECTION: (StatusCode, &str) = (StatusCode::UNAUTHORIZED, "Authorization failed");
 
         let Some(header) = parts.headers.get(AUTHORIZATION) else {
             tracing::debug!("Failed auth");
@@ -32,11 +31,11 @@ impl FromRequestParts<AppState> for Authenticate {
             tracing::debug!("Failed auth");
             return Err(REJECTION);
         };
-        let Ok(AuthHeader { game_id, player_id, token }) = serde_json::from_str::<AuthHeader>(&header) else {
+        let Ok(AuthHeader { game_id, player_id, token }) = serde_json::from_str::<AuthHeader>(header) else {
             tracing::debug!("Failed auth");
             return Err(REJECTION);
         };
-        if !state.auth.validate(token, game_id, player_id) {
+        if !state.auth.validate_session(token, game_id, player_id) {
             tracing::debug!("Failed auth for game `{game_id}`");
             return Err(REJECTION);
         }
@@ -56,37 +55,17 @@ impl FromRequestParts<AppState> for AuthenticateHost {
         parts: &mut Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
-        const REJECTION: (StatusCode, &'static str) =
-            (StatusCode::UNAUTHORIZED, "Host authorization failed");
+        const REJECTION: (StatusCode, &str) = (StatusCode::UNAUTHORIZED, "Authorization failed");
 
-        let Some(header) = parts.headers.get(AUTHORIZATION) else {
-            tracing::debug!("Failed auth");
-            return Err(REJECTION);
-        };
-        let Ok(header) = header.to_str() else {
-            tracing::debug!("Failed auth");
-            return Err(REJECTION);
-        };
-        let Ok(AuthHeader { game_id, player_id, token }) = serde_json::from_str::<AuthHeader>(&header) else {
-            tracing::debug!("Failed auth");
-            return Err(REJECTION);
-        };
-        if !state.auth.validate(token, game_id, player_id) {
-            tracing::debug!("Failed auth for game `{game_id}`");
-            return Err(REJECTION);
-        }
-        match state
-            .games
-            .with_game(game_id, |game| game.host == player_id)
-        {
-            Some(true) => Ok(AuthenticateHost(AuthentificatedPlayer {
-                game_id,
-                player_id,
-            })),
-            None | Some(false) => {
-                tracing::debug!("Failed auth for game `{game_id}`: not a host");
-                Err(REJECTION)
-            }
+        let Authenticate(authenticated) = Authenticate::from_request_parts(parts, state).await?;
+        if authenticated.player_id.is_host() {
+            Ok(AuthenticateHost(authenticated))
+        } else {
+            tracing::info!(
+                "Failed auth for game `{}`: not a host",
+                authenticated.game_id
+            );
+            Err(REJECTION)
         }
     }
 }
