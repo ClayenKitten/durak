@@ -1,15 +1,18 @@
 //! Game state and logic.
 
+mod round;
+
 use durak_lib::{
-    game::{card::Card, deck::Deck, hand::Hand, player::Player, table::Table},
+    game::{hand::Hand, player::Player},
     identifiers::PlayerId,
     status::{GameState, GameStatus, LobbyPlayerData},
 };
 
+use self::round::RoundState;
+
 #[derive(Debug)]
 pub struct Game {
     state: GameState,
-    deck: Deck,
     players: Vec<Player>,
     round: Option<RoundState>,
 }
@@ -22,7 +25,6 @@ impl Game {
                 players: Vec::new(),
                 can_start: false,
             },
-            deck: Deck::new(),
             players: Vec::new(),
             round: None,
         }
@@ -31,6 +33,11 @@ impl Game {
     /// Returns current state of the game.
     pub fn state(&self) -> &GameState {
         &self.state
+    }
+
+    /// Returns round state of the game.
+    pub fn round(&mut self) -> &mut Option<RoundState> {
+        &mut self.round
     }
 
     /// Generates status report for specific player.
@@ -43,7 +50,7 @@ impl Game {
             attacker: round.attacker,
             defender: round.defender,
             table: round.table.clone(),
-            deck_size: self.deck.count() as u8,
+            deck_size: round.deck.count() as u8,
             hand: self
                 .players
                 .iter()
@@ -107,167 +114,14 @@ impl Game {
             _ => {}
         }
 
-        self.deck.shuffle();
-        for player in self.players.iter_mut() {
-            for _ in 0..6 {
-                let card = self.deck.take().unwrap();
-                player.hand.add(card)
-            }
-        }
-        let trump = self.deck.take().unwrap();
-        self.deck.insert_bottom(trump);
-
-        let mut players = self.players.iter();
-        let attacker = players
-            .next()
-            .expect("at least two players are required to start the game")
-            .id;
-        let defender = players
-            .next()
-            .expect("at least two players are required to start the game")
-            .id;
-
-        self.round = Some(RoundState {
-            table: Table::new(),
-            trump,
-            attacker,
-            defender,
-        });
+        let round = RoundState::new(self.players.iter().map(|p| p.id).collect());
         // TODO: follow game's rules about first player.
         self.state = GameState::Started {
-            trump,
+            trump: round.trump,
             players: self.players.iter().cloned().map(|p| p.into()).collect(),
         };
+        self.round = Some(round);
 
         true
-    }
-
-    /// Places card on the table.
-    ///
-    /// Returns `true` if played successfully.
-    pub fn play_card(&mut self, player_id: PlayerId, card: Card) -> bool {
-        let Some(ref mut round) = self.round else {
-            return false;
-        };
-        let Some(player) = self.players.iter_mut().find(|player| player.id == player_id) else {
-            return false;
-        };
-
-        if round.attacker == player_id {
-            if player.hand.contains(card) && round.table.attack(card) {
-                player.hand.remove(card);
-                true
-            } else {
-                false
-            }
-        } else if round.defender == player_id {
-            if player.hand.contains(card) && round.table.defend(card, round.trump.suit) {
-                player.hand.remove(card);
-                true
-            } else {
-                false
-            }
-        } else {
-            false
-        }
-    }
-
-    pub fn retreat(&mut self, player_id: PlayerId) -> bool {
-        let Some(ref mut round) = self.round else {
-            return false;
-        };
-        let attacker = round.attacker;
-        if round.attacker != player_id {
-            return false;
-        }
-        if round.table.retreat() {
-            round.swap_players();
-            self.deal_cards_to_players(attacker);
-            self.check_win();
-            true
-        } else {
-            false
-        }
-    }
-
-    pub fn take(&mut self, player_id: PlayerId) -> bool {
-        let Some(ref mut round) = self.round else {
-            return false;
-        };
-        let attacker = round.attacker;
-        let Some(player) = self.players.iter_mut().find(|player| player.id == player_id) else {
-            return false;
-        };
-
-        if round.defender != player_id {
-            return false;
-        }
-        let Some(cards) = round.table.take() else {
-            return false;
-        };
-        for card in cards {
-            player.hand.add(card);
-        }
-        self.deal_cards_to_players(attacker);
-        self.check_win();
-        true
-    }
-
-    fn deal_cards_to_players(&mut self, attacker: PlayerId) {
-        let attacker = self
-            .players
-            .iter()
-            .position(|player| player.id == attacker)
-            .unwrap();
-        let count = self.players.len();
-
-        for i in (attacker..count).chain(0..attacker) {
-            let player = &mut self.players[i];
-            let additional_cards_number = 6usize.saturating_sub(player.hand.count());
-            for _ in 0..additional_cards_number {
-                let Some(card) = self.deck.take() else {
-                    break;
-                };
-                player.hand.add(card);
-            }
-        }
-    }
-
-    /// Checks if any player won the game and updates
-    fn check_win(&mut self) {
-        for player in self.players.iter() {
-            if player.hand.is_empty() && self.deck.is_empty() {
-                self.state = GameState::Completed {
-                    winner_id: player.id,
-                    winner_name: player.name.clone(),
-                };
-            }
-        }
-    }
-}
-
-/// State of the game that is unique to the round.
-#[derive(Debug)]
-struct RoundState {
-    pub trump: Card,
-    pub table: Table,
-    pub attacker: PlayerId,
-    pub defender: PlayerId,
-}
-
-impl RoundState {
-    /// Swaps attacker and defender.
-    // TODO: allow more than two players.
-    pub fn swap_players(&mut self) {
-        std::mem::swap(&mut self.attacker, &mut self.defender)
-    }
-
-    /// Returns id of the player whose turn is it to play.
-    pub fn turn(&self) -> PlayerId {
-        if self.table.all_attacks_answered() {
-            self.attacker
-        } else {
-            self.defender
-        }
     }
 }
