@@ -39,14 +39,20 @@ impl Display for GameId {
     }
 }
 
-/// The unique identifier of the player within the game.
+/// Unique identifier of the player within the game.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct PlayerId(pub u8);
+pub struct PlayerId(u8);
 
 impl PlayerId {
+    /// Creates new id.
     pub fn new(id: u8) -> Self {
         PlayerId(id)
+    }
+
+    /// Returns `true` if that player is host.
+    pub fn is_host(&self) -> bool {
+        self.0 == 0
     }
 }
 
