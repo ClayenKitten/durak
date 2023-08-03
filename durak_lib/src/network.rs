@@ -10,7 +10,6 @@ use axum::{
 };
 
 use serde::{Deserialize, Serialize};
-use thiserror::Error;
 
 use crate::{
     game::card::Card,
@@ -109,17 +108,6 @@ impl IntoResponse for JoinGameResponse {
         };
         (code, Json(self)).into_response()
     }
-}
-
-/// Error that occured when attempted to join the game.
-#[derive(Debug, Error)]
-pub enum JoinGameError {
-    #[error("game not found")]
-    NotFound,
-    #[error("password doesn't match")]
-    InvalidPassword,
-    #[error("too many players")]
-    TooManyPlayers,
 }
 
 /// Query parameters used to play card.
