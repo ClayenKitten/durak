@@ -1,6 +1,6 @@
 //! Game state and logic.
 
-mod round;
+pub mod round;
 
 use durak_lib::{
     game::{hand::Hand, player::Player},
@@ -36,8 +36,8 @@ impl Game {
     }
 
     /// Returns round state of the game.
-    pub fn round(&mut self) -> &mut Option<RoundState> {
-        &mut self.round
+    pub fn round(&mut self) -> Option<&mut RoundState> {
+        self.round.as_mut()
     }
 
     /// Generates status report for specific player.

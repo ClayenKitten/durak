@@ -160,10 +160,7 @@ async fn play_card(
     Authenticate(player): Authenticate,
 ) -> impl IntoResponse {
     games
-        .with_game(player.game_id, |game| {
-            let Some(round) = game.round() else {
-                return StatusCode::BAD_REQUEST;
-            };
+        .with_started_game(player.game_id, |round| {
             if round.play_card(player.player_id, card) {
                 info!(
                     "card played by player #{} in game `{}`",
@@ -182,10 +179,7 @@ async fn play_card(
 /// Should be called by defending player.
 async fn take(State(games): State<Games>, Authenticate(player): Authenticate) -> impl IntoResponse {
     games
-        .with_game(player.game_id, |game| {
-            let Some(round) = game.round() else {
-                return StatusCode::BAD_REQUEST;
-            };
+        .with_started_game(player.game_id, |round| {
             if round.take(player.player_id) {
                 info!(
                     "Cards are taken by player #{} in game `{}`",
@@ -207,10 +201,7 @@ async fn retreat(
     Authenticate(player): Authenticate,
 ) -> impl IntoResponse {
     games
-        .with_game(player.game_id, |game| {
-            let Some(round) = game.round() else {
-                return StatusCode::BAD_REQUEST;
-            };
+        .with_started_game(player.game_id, |round| {
             if round.retreat(player.player_id) {
                 info!(
                     "Player #{} retreated in game `{}`",

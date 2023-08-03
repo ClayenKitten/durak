@@ -12,7 +12,7 @@ use durak_lib::{
 };
 use rand::{thread_rng, Rng};
 
-use crate::game::Game;
+use crate::game::{round::RoundState, Game};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -55,6 +55,18 @@ impl Games {
         let mut games = self.0.lock().unwrap();
         let game = games.get_mut(&id)?;
         Some(func(game))
+    }
+
+    /// Evalutes provided function with mutable reference to round data.
+    pub fn with_started_game<T>(
+        &self,
+        id: GameId,
+        func: impl FnOnce(&mut RoundState) -> T,
+    ) -> Option<T> {
+        let mut games = self.0.lock().unwrap();
+        let game = games.get_mut(&id)?;
+        let round = game.round()?;
+        Some(func(round))
     }
 }
 
