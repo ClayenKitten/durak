@@ -1,5 +1,7 @@
 //! Game state and logic.
 
+pub mod finished;
+pub mod lobby;
 pub mod round;
 
 use durak_lib::{
@@ -8,7 +10,7 @@ use durak_lib::{
     status::{GameState, GameStatus, LobbyPlayerData},
 };
 
-use self::round::RoundState;
+use self::{finished::FinishedState, lobby::LobbyState, round::RoundState};
 
 #[derive(Debug)]
 pub struct Game {
@@ -123,5 +125,22 @@ impl Game {
         self.round = Some(round);
 
         true
+    }
+}
+
+/// Phase-specific state of the game.
+#[derive(Debug)]
+enum GamePhase {
+    /// Preparation phase of the game.
+    Lobby(LobbyState),
+    /// Main phase of the game.
+    Round(RoundState),
+    /// Game is finished and winner is selected.
+    Finished(FinishedState),
+}
+
+impl GamePhase {
+    pub fn new() -> Self {
+        GamePhase::Lobby(LobbyState::new())
     }
 }
