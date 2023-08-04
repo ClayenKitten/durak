@@ -4,19 +4,15 @@ use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_egui::egui::{
     Align, Button, Color32, Direction, Frame, Label, Layout, Margin, Sense, Ui, Vec2,
 };
-use durak_lib::{
-    identifiers::PlayerId,
-    status::{GameState, LobbyPlayerData},
-};
+use durak_lib::{identifiers::PlayerId, status::LobbyStatus};
 
 use crate::{
-    network::{LeaveGameRequest, OnResponse, StartGameRequest, StateRequest},
+    network::{LeaveGameRequest, StartGameRequest},
     session::Session,
     ui::{
         utils::{BUTTON_SIZE, MARGIN},
         UiContext,
     },
-    GameScreen, GameStarted,
 };
 
 use super::CurrentScreen;
@@ -25,16 +21,16 @@ pub struct LobbyScreen;
 
 impl Plugin for LobbyScreen {
     fn build(&self, app: &mut App) {
-        app.init_resource::<LobbyStatus>().add_systems(
+        app.add_systems(
             Update,
             (
                 (
-                    display,
-                    request_state.run_if(on_timer(Duration::from_secs_f32(2.))),
+                    display.run_if(resource_exists::<LobbyStatus>()),
+                    request_status.run_if(on_timer(Duration::from_secs_f32(0.5))),
                 )
                     .run_if(resource_exists::<Session>()),
                 display_loading.run_if(not(resource_exists::<Session>())),
-                on_state_response,
+                on_status_response,
             )
                 .run_if(in_state(CurrentScreen::Lobby)),
         );
@@ -88,7 +84,7 @@ fn display(
                             ui.add_space(ui.available_width() - BUTTON_SIZE.x);
                             if ui
                                 .add_enabled(
-                                    status.can_start && session.is_host,
+                                    status.can_start() && session.is_host,
                                     Button::new("Start").min_size(BUTTON_SIZE),
                                 )
                                 .clicked()
@@ -100,6 +96,10 @@ fn display(
                 });
         });
     })
+}
+
+fn request_status(mut commands: Commands) {
+    todo!();
 }
 
 fn display_loading(mut ctx: UiContext) {
@@ -131,40 +131,6 @@ fn player_entry(ui: &mut Ui, player: PlayerId, name: &str, is_host: bool) {
         });
 }
 
-#[derive(Debug, Resource, Default)]
-struct LobbyStatus {
-    players: Vec<LobbyPlayerData>,
-    can_start: bool,
-}
-
-fn request_state(mut commands: Commands, session: Res<Session>) {
-    commands.spawn(StateRequest(session.into_header()));
-}
-
-fn on_state_response(
-    mut events: EventReader<OnResponse<StateRequest>>,
-    mut lobby_status: ResMut<LobbyStatus>,
-    mut menu_state: ResMut<NextState<CurrentScreen>>,
-    mut next_game_state: ResMut<NextState<GameScreen>>,
-    mut event_writer: EventWriter<GameStarted>,
-) {
-    for OnResponse(game_state) in events.iter() {
-        match game_state {
-            GameState::Lobby { players, can_start } => {
-                *lobby_status = LobbyStatus {
-                    players: players.clone(),
-                    can_start: *can_start,
-                };
-            }
-            GameState::Started { trump, players } => {
-                menu_state.0 = Some(CurrentScreen::None);
-                next_game_state.0 = Some(GameScreen::Round);
-                event_writer.send(GameStarted {
-                    trump: *trump,
-                    opponents: players.clone(),
-                });
-            }
-            _ => continue,
-        }
-    }
+fn on_status_response() {
+    todo!();
 }

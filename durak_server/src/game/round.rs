@@ -9,7 +9,7 @@ use durak_lib::{
         table::Table,
     },
     identifiers::PlayerId,
-    status::{GameStatus, LobbyPlayerData},
+    status::{LobbyPlayerData, RoundStatus},
 };
 
 /// State of started game.
@@ -162,8 +162,8 @@ impl RoundState {
     }
 
     /// Generates status report for specific player.
-    pub fn status(&self, player: PlayerId) -> Option<GameStatus> {
-        Some(GameStatus {
+    pub fn status(&self, player: PlayerId) -> Option<RoundStatus> {
+        Some(RoundStatus {
             turn: self.turn(),
             attacker: self.attacker,
             defender: self.defender,

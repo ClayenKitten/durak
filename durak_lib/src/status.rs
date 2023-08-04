@@ -1,8 +1,15 @@
-/// Status of the game.
+//! Status of the game.
+
+mod lobby;
+mod round;
+
+pub use lobby::LobbyStatus;
+pub use round::RoundStatus;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    game::{card::Card, hand::Hand, player::Opponent, table::Table},
+    game::{card::Card, player::Opponent},
     identifiers::PlayerId,
 };
 
@@ -30,25 +37,4 @@ pub enum GameState {
 pub struct LobbyPlayerData {
     pub id: PlayerId,
     pub name: String,
-}
-
-/// Status of the ongoing game that is known to specific player.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GameStatus {
-    /// What player should take action now.
-    pub turn: PlayerId,
-    /// Attacker of the round.
-    pub attacker: PlayerId,
-    /// Defender of the round.
-    pub defender: PlayerId,
-    /// Table state.
-    pub table: Table,
-    /// Hand of the player.
-    pub hand: Hand,
-    /// Number of cards left in deck.
-    pub deck_size: u8,
-    /// List of opposing players.
-    ///
-    /// Doesn't include player that requested status report.
-    pub opponents: Vec<Opponent>,
 }

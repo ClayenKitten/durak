@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     game::card::Card,
     identifiers::{GameId, PlayerId},
-    status::{GameState, GameStatus},
+    status::{GameState, RoundStatus},
 };
 
 /// Token used to uniquely identify each player session.
@@ -147,7 +147,7 @@ impl IntoResponse for GameState {
 }
 
 #[cfg(feature = "axum")]
-impl IntoResponse for GameStatus {
+impl IntoResponse for RoundStatus {
     fn into_response(self) -> Response {
         (StatusCode::OK, Json(self)).into_response()
     }
