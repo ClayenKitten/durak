@@ -7,6 +7,7 @@ use crate::{
 };
 
 /// General state of the game that is known to all players.
+#[deprecated]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum GameState {
     /// Game hasn't started yet, players are connecting.

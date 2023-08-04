@@ -4,104 +4,46 @@ pub mod finished;
 pub mod lobby;
 pub mod round;
 
-use durak_lib::{
-    game::{hand::Hand, player::Player},
-    identifiers::PlayerId,
-    status::{GameState, GameStatus, LobbyPlayerData},
-};
-
 use self::{finished::FinishedState, lobby::LobbyState, round::RoundState};
 
 #[derive(Debug)]
 pub struct Game {
-    state: GameState,
-    players: Vec<Player>,
-    round: Option<RoundState>,
+    phase: GamePhase,
 }
 
 impl Game {
     /// Creates new game with provided password set.
     pub fn new() -> Self {
         Self {
-            state: GameState::Lobby {
-                players: Vec::new(),
-                can_start: false,
-            },
-            players: Vec::new(),
-            round: None,
+            phase: GamePhase::new(),
         }
     }
 
-    /// Returns current state of the game.
-    pub fn state(&self) -> &GameState {
-        &self.state
+    /// Returns lobby state of the game.
+    pub fn lobby_state(&mut self) -> Option<&mut LobbyState> {
+        if let GamePhase::Lobby(state) = &mut self.phase {
+            Some(state)
+        } else {
+            None
+        }
     }
 
     /// Returns round state of the game.
-    pub fn round(&mut self) -> Option<&mut RoundState> {
-        self.round.as_mut()
+    pub fn round_state(&mut self) -> Option<&mut RoundState> {
+        if let GamePhase::Round(state) = &mut self.phase {
+            Some(state)
+        } else {
+            None
+        }
     }
 
-    /// Generates status report for specific player.
-    pub fn status(&self, player: PlayerId) -> Option<GameStatus> {
-        let Some(ref round) = self.round else {
-            return None;
-        };
-        Some(GameStatus {
-            turn: round.turn(),
-            attacker: round.attacker,
-            defender: round.defender,
-            table: round.table.clone(),
-            deck_size: round.deck.count() as u8,
-            hand: self
-                .players
-                .iter()
-                .find(|p| p.id == player)
-                .map(|player| player.hand.clone())?,
-            opponents: self
-                .players
-                .iter()
-                .filter(|p| p.id != player)
-                .cloned()
-                .map(|player| player.into())
-                .collect(),
-        })
-    }
-
-    /// Adds new player to the game.
-    ///
-    /// Returns `None` if game is already full.
-    /// Otherwise, returns [PlayerId] of the new player.
-    pub fn add_player(&mut self, name: String) -> Option<PlayerId> {
-        if self.players.len() > 1 {
-            return None;
+    /// Returns finished state of the game.
+    pub fn finished_state(&mut self) -> Option<&mut FinishedState> {
+        if let GamePhase::Finished(state) = &mut self.phase {
+            Some(state)
+        } else {
+            None
         }
-        let id = PlayerId::new(self.players.len() as u8);
-        self.players.push(Player {
-            id,
-            name: name.clone(),
-            hand: Hand::default(),
-        });
-        if let GameState::Lobby { players, can_start } = &mut self.state {
-            players.push(LobbyPlayerData { id, name });
-            *can_start = self.players.len() >= 2;
-        }
-        Some(id)
-    }
-
-    /// Removes player from the game.
-    ///
-    /// Returns `true` if removed successfully.
-    pub fn remove_player(&mut self, player_id: PlayerId) -> bool {
-        let Some(index) = self.players.iter().position(|p| p.id == player_id) else {
-            return false;
-        };
-        self.players.remove(index);
-        if let GameState::Lobby { players, can_start } = &mut self.state {
-            players.remove(index);
-            *can_start = self.players.len() >= 2;
-        }
-        true
     }
 
     /// Starts the game.
@@ -110,21 +52,12 @@ impl Game {
     ///
     /// Returns `true` if started successfully.
     pub fn start(&mut self) -> bool {
-        match self.state {
-            GameState::Started { .. } => return false,
-            GameState::Completed { .. } => return false,
-            _ => {}
+        if let GamePhase::Lobby(state) = &mut self.phase {
+            self.phase = GamePhase::Round(state.to_started());
+            true
+        } else {
+            false
         }
-
-        let round = RoundState::new(self.players.iter().map(|p| p.id).collect());
-        // TODO: follow game's rules about first player.
-        self.state = GameState::Started {
-            trump: round.trump,
-            players: self.players.iter().cloned().map(|p| p.into()).collect(),
-        };
-        self.round = Some(round);
-
-        true
     }
 }
 

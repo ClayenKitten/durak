@@ -45,4 +45,9 @@ impl LobbyState {
         // TODO: allow more than two players.
         self.players.len() == 2
     }
+
+    /// Transforms state to the [RoundState].
+    pub fn to_started(&self) -> RoundState {
+        RoundState::new(self.players.clone())
+    }
 }

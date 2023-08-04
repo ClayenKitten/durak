@@ -87,6 +87,7 @@ impl MyRequest for LeaveGameRequest {
 }
 
 #[derive(Debug, Component)]
+#[deprecated]
 pub struct StateRequest(pub AuthHeader);
 
 impl MyRequest for StateRequest {

@@ -77,13 +77,13 @@ async fn join_game(
     Query(data): Query<JoinGameData>,
 ) -> impl IntoResponse {
     games
-        .with_game(data.id, |game| {
+        .with_lobby_game(data.id, |lobby| {
             if !auth.validate_password(data.id, &data.password) {
                 info!("attempted to join with wrong password `{}`", data.id);
                 return JoinGameResponse::InvalidPassword;
             }
 
-            match game.add_player(data.name) {
+            match lobby.add_player(data.name) {
                 Some(player_id) => {
                     info!("player joined game `{}`", data.id);
                     let token = auth.generate_token(data.id, player_id);
@@ -127,13 +127,9 @@ async fn start(
 /// Requests information about current [GameState](durak_lib::status::GameState).
 ///
 /// Should be called regularly before game starts or when [status] fails.
-async fn state(
-    State(games): State<Games>,
-    Authenticate(player): Authenticate,
-) -> impl IntoResponse {
-    games
-        .with_game(player.game_id, |game| game.state().clone().into_response())
-        .unwrap_or((StatusCode::NOT_FOUND, "Game not found").into_response())
+#[deprecated]
+async fn state() -> impl IntoResponse {
+    (StatusCode::GONE, "Deprecated")
 }
 
 /// Requests information about [GameStatus](durak_lib::status::GameStatus) for the current player.
@@ -144,8 +140,9 @@ async fn status(
     Authenticate(player): Authenticate,
 ) -> impl IntoResponse {
     games
-        .with_game(player.game_id, |game| {
-            game.status(player.player_id)
+        .with_started_game(player.game_id, |round| {
+            round
+                .status(player.player_id)
                 .clone()
                 .map(|s| s.into_response())
                 .unwrap_or((StatusCode::BAD_REQUEST, "Failed to get game's status").into_response())
@@ -216,8 +213,9 @@ async fn retreat(
 }
 
 /// Leave the game.
+// TODO: allow leaving ongoing game.
 async fn leave(State(games): State<Games>, Authenticate(player): Authenticate) {
-    games.with_game(player.game_id, |game| {
+    games.with_lobby_game(player.game_id, |game| {
         if game.remove_player(player.player_id) {
             info!(
                 "player #{} left the game `{}`",

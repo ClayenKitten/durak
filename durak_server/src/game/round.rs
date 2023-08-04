@@ -5,9 +5,11 @@ use durak_lib::{
         card::{Card, CardRank, CardSuit},
         deck::Deck,
         hand::Hand,
+        player::Opponent,
         table::Table,
     },
     identifiers::PlayerId,
+    status::{GameStatus, LobbyPlayerData},
 };
 
 /// State of started game.
@@ -18,14 +20,15 @@ pub struct RoundState {
     pub table: Table,
     pub attacker: PlayerId,
     pub defender: PlayerId,
+    pub players: Vec<LobbyPlayerData>,
     pub hands: HashMap<PlayerId, Hand>,
 }
 
 /// New round creation.
 impl RoundState {
-    pub fn new(players: Vec<PlayerId>) -> Self {
+    pub fn new(players: Vec<LobbyPlayerData>) -> Self {
         let mut deck = Self::create_deck();
-        let hands = Self::create_hands(&mut deck, players);
+        let hands = Self::create_hands(&mut deck, players.iter().map(|p| p.id).collect());
         let trump = Self::pick_trump(&mut deck);
         let attacker = Self::define_first_attacker(&hands, trump.suit);
         // TODO: allow more than two players
@@ -42,6 +45,7 @@ impl RoundState {
             attacker,
             defender,
             hands,
+            players,
         }
     }
 
@@ -155,6 +159,29 @@ impl RoundState {
         }
         self.deal_cards();
         true
+    }
+
+    /// Generates status report for specific player.
+    pub fn status(&self, player: PlayerId) -> Option<GameStatus> {
+        Some(GameStatus {
+            turn: self.turn(),
+            attacker: self.attacker,
+            defender: self.defender,
+            table: self.table.clone(),
+            deck_size: self.deck.count() as u8,
+            opponents: self
+                .players
+                .iter()
+                .filter(|p| p.id != player)
+                .cloned()
+                .map(|LobbyPlayerData { id, name }| Opponent {
+                    id,
+                    name,
+                    cards_number: self.hands.get(&id).unwrap().count() as u8,
+                })
+                .collect(),
+            hand: self.hands.get(&player).unwrap().clone(),
+        })
     }
 }
 

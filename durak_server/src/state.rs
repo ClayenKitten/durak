@@ -12,7 +12,7 @@ use durak_lib::{
 };
 use rand::{thread_rng, Rng};
 
-use crate::game::{round::RoundState, Game};
+use crate::game::{lobby::LobbyState, round::RoundState, Game};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -44,20 +44,32 @@ impl Games {
         let mut games = self.0.lock().unwrap();
 
         let mut game = Game::new();
-        game.add_player(name);
+        game.lobby_state().unwrap().add_player(name);
 
         games.insert(id, game);
         id
     }
 
-    /// Evalutes provided function with mutable reference to game.
+    /// Evaluates provided function with mutable reference to game.
     pub fn with_game<T>(&self, id: GameId, func: impl FnOnce(&mut Game) -> T) -> Option<T> {
         let mut games = self.0.lock().unwrap();
         let game = games.get_mut(&id)?;
         Some(func(game))
     }
 
-    /// Evalutes provided function with mutable reference to round data.
+    /// Evaluates provided function with mutable reference to [LobbyState].
+    pub fn with_lobby_game<T>(
+        &self,
+        id: GameId,
+        func: impl FnOnce(&mut LobbyState) -> T,
+    ) -> Option<T> {
+        let mut games = self.0.lock().unwrap();
+        let game = games.get_mut(&id)?;
+        let round = game.lobby_state()?;
+        Some(func(round))
+    }
+
+    /// Evaluates provided function with mutable reference to [RoundState].
     pub fn with_started_game<T>(
         &self,
         id: GameId,
@@ -65,7 +77,7 @@ impl Games {
     ) -> Option<T> {
         let mut games = self.0.lock().unwrap();
         let game = games.get_mut(&id)?;
-        let round = game.round()?;
+        let round = game.round_state()?;
         Some(func(round))
     }
 }
