@@ -12,6 +12,17 @@ pub enum AccessError {
     InvalidPhase(#[from] InvalidPhase),
 }
 
+impl AccessError {
+    pub fn status_code(&self) -> http::StatusCode {
+        use http::StatusCode;
+        match self {
+            AccessError::AuthFailed(_) => StatusCode::UNAUTHORIZED,
+            AccessError::GameNotFound(_) => StatusCode::NOT_FOUND,
+            AccessError::InvalidPhase(_) => StatusCode::BAD_REQUEST,
+        }
+    }
+}
+
 /// Token authorization failed
 #[derive(Debug, Error, Serialize, Deserialize)]
 pub enum AuthFailed {

@@ -111,11 +111,7 @@ impl IntoResponse for JoinGameResponse {
             JoinGameResponse::Ok { .. } => StatusCode::OK,
             JoinGameResponse::InvalidPassword => StatusCode::BAD_REQUEST,
             JoinGameResponse::TooManyPlayers => StatusCode::BAD_REQUEST,
-            JoinGameResponse::AccessError(ref error) => match error {
-                AccessError::AuthFailed(_) => StatusCode::UNAUTHORIZED,
-                AccessError::GameNotFound(_) => StatusCode::NOT_FOUND,
-                AccessError::InvalidPhase(_) => StatusCode::BAD_REQUEST,
-            },
+            JoinGameResponse::AccessError(ref error) => error.status_code(),
         };
         (code, Json(self)).into_response()
     }
