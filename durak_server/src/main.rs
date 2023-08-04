@@ -8,6 +8,7 @@ use durak_lib::{
     game::card::Card,
     identifiers::PlayerId,
     network::{CreateGameData, CreateGameResponse, JoinGameData, JoinGameResponse},
+    status::round::RoundStatusResponse,
 };
 
 use axum::{
@@ -152,9 +153,9 @@ async fn status(
 ) -> impl IntoResponse {
     games
         .with_started_game(player.game_id, |round| {
-            round.status(player.player_id).into_response()
+            RoundStatusResponse::Ok(round.status(player.player_id))
         })
-        .unwrap_or((StatusCode::NOT_FOUND, "Game not found").into_response())
+        .unwrap_or_else(|err| err.into())
 }
 
 /// Plays specified card on the table.
