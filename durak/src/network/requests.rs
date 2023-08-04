@@ -6,7 +6,7 @@ use bevy_mod_reqwest::reqwest::{
 use durak_lib::{
     game::card::Card,
     network::{AuthHeader, CreateGameData, CreateGameResponse, JoinGameData, JoinGameResponse},
-    status::{GameState, RoundStatus},
+    status::{round::RoundStatus, GameState},
 };
 
 use super::MyRequest;

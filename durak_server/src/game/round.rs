@@ -9,7 +9,7 @@ use durak_lib::{
         table::Table,
     },
     identifiers::PlayerId,
-    status::{LobbyPlayerData, RoundStatus},
+    status::{round::RoundStatus, LobbyPlayerData},
 };
 
 /// State of started game.

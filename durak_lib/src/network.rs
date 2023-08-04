@@ -15,7 +15,7 @@ use crate::{
     errors::AccessError,
     game::card::Card,
     identifiers::{GameId, PlayerId},
-    status::{GameState, RoundStatus},
+    status::{round::RoundStatus, GameState},
 };
 
 /// Token used to uniquely identify each player session.

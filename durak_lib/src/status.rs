@@ -1,10 +1,7 @@
 //! Status of the game.
 
-mod lobby;
-mod round;
-
-pub use lobby::LobbyStatus;
-pub use round::RoundStatus;
+pub mod lobby;
+pub mod round;
 
 use serde::{Deserialize, Serialize};
 

@@ -4,7 +4,7 @@ use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_egui::egui::{
     Align, Button, Color32, Direction, Frame, Label, Layout, Margin, Sense, Ui, Vec2,
 };
-use durak_lib::{identifiers::PlayerId, status::LobbyStatus};
+use durak_lib::{identifiers::PlayerId, status::lobby::LobbyStatus};
 
 use crate::{
     network::{LeaveGameRequest, StartGameRequest},
