@@ -152,11 +152,7 @@ async fn status(
 ) -> impl IntoResponse {
     games
         .with_started_game(player.game_id, |round| {
-            round
-                .status(player.player_id)
-                .clone()
-                .map(|s| s.into_response())
-                .unwrap_or((StatusCode::BAD_REQUEST, "Failed to get game's status").into_response())
+            round.status(player.player_id).into_response()
         })
         .unwrap_or((StatusCode::NOT_FOUND, "Game not found").into_response())
 }

@@ -162,8 +162,8 @@ impl RoundState {
     }
 
     /// Generates status report for specific player.
-    pub fn status(&self, player: PlayerId) -> Option<RoundStatus> {
-        Some(RoundStatus {
+    pub fn status(&self, player: PlayerId) -> RoundStatus {
+        RoundStatus {
             turn: self.turn(),
             attacker: self.attacker,
             defender: self.defender,
@@ -181,7 +181,7 @@ impl RoundState {
                 })
                 .collect(),
             hand: self.hands.get(&player).unwrap().clone(),
-        })
+        }
     }
 }
 
