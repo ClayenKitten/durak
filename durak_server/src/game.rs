@@ -4,6 +4,8 @@ pub mod finished;
 pub mod lobby;
 pub mod round;
 
+use durak_lib::errors::InvalidPhase;
+
 use self::{finished::FinishedState, lobby::LobbyState, round::RoundState};
 
 #[derive(Debug)]
@@ -20,29 +22,29 @@ impl Game {
     }
 
     /// Returns lobby state of the game.
-    pub fn lobby_state(&mut self) -> Option<&mut LobbyState> {
+    pub fn lobby_state(&mut self) -> Result<&mut LobbyState, InvalidPhase> {
         if let GamePhase::Lobby(state) = &mut self.phase {
-            Some(state)
+            Ok(state)
         } else {
-            None
+            Err(InvalidPhase)
         }
     }
 
     /// Returns round state of the game.
-    pub fn round_state(&mut self) -> Option<&mut RoundState> {
+    pub fn round_state(&mut self) -> Result<&mut RoundState, InvalidPhase> {
         if let GamePhase::Round(state) = &mut self.phase {
-            Some(state)
+            Ok(state)
         } else {
-            None
+            Err(InvalidPhase)
         }
     }
 
     /// Returns finished state of the game.
-    pub fn finished_state(&mut self) -> Option<&mut FinishedState> {
+    pub fn finished_state(&mut self) -> Result<&mut FinishedState, InvalidPhase> {
         if let GamePhase::Finished(state) = &mut self.phase {
-            Some(state)
+            Ok(state)
         } else {
-            None
+            Err(InvalidPhase)
         }
     }
 

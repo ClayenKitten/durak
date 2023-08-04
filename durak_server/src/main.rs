@@ -4,6 +4,7 @@ pub mod state;
 
 use auth::{Authenticate, AuthenticateHost};
 use durak_lib::{
+    errors::AccessError,
     game::card::Card,
     identifiers::PlayerId,
     network::{CreateGameData, CreateGameResponse, JoinGameData, JoinGameResponse},
@@ -99,9 +100,19 @@ async fn join_game(
                 }
             }
         })
-        .unwrap_or_else(|| {
-            info!("attempted to join nonexisting game `{}`", data.id);
-            JoinGameResponse::NotFound
+        .unwrap_or_else(|err| {
+            match err {
+                AccessError::AuthFailed(_) => {
+                    unreachable!("token auth shouldn't fail for game join request");
+                }
+                AccessError::GameNotFound(_) => {
+                    info!("attempted to join nonexisting game `{}`", data.id);
+                }
+                AccessError::InvalidPhase(_) => {
+                    info!("attempted to join started game `{}`", data.id);
+                }
+            }
+            err.into()
         })
 }
 
@@ -215,7 +226,7 @@ async fn retreat(
 /// Leave the game.
 // TODO: allow leaving ongoing game.
 async fn leave(State(games): State<Games>, Authenticate(player): Authenticate) {
-    games.with_lobby_game(player.game_id, |game| {
+    let _ = games.with_lobby_game(player.game_id, |game| {
         if game.remove_player(player.player_id) {
             info!(
                 "player #{} left the game `{}`",

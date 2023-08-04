@@ -7,6 +7,7 @@ use std::{
 
 use axum::extract::FromRef;
 use durak_lib::{
+    errors::{AccessError, GameNotFound},
     identifiers::{GameId, PlayerId},
     network::Token,
 };
@@ -51,10 +52,14 @@ impl Games {
     }
 
     /// Evaluates provided function with mutable reference to game.
-    pub fn with_game<T>(&self, id: GameId, func: impl FnOnce(&mut Game) -> T) -> Option<T> {
+    pub fn with_game<T>(
+        &self,
+        id: GameId,
+        func: impl FnOnce(&mut Game) -> T,
+    ) -> Result<T, GameNotFound> {
         let mut games = self.0.lock().unwrap();
-        let game = games.get_mut(&id)?;
-        Some(func(game))
+        let game = games.get_mut(&id).ok_or(GameNotFound)?;
+        Ok(func(game))
     }
 
     /// Evaluates provided function with mutable reference to [LobbyState].
@@ -62,11 +67,11 @@ impl Games {
         &self,
         id: GameId,
         func: impl FnOnce(&mut LobbyState) -> T,
-    ) -> Option<T> {
+    ) -> Result<T, AccessError> {
         let mut games = self.0.lock().unwrap();
-        let game = games.get_mut(&id)?;
+        let game = games.get_mut(&id).ok_or(GameNotFound)?;
         let round = game.lobby_state()?;
-        Some(func(round))
+        Ok(func(round))
     }
 
     /// Evaluates provided function with mutable reference to [RoundState].
@@ -74,11 +79,11 @@ impl Games {
         &self,
         id: GameId,
         func: impl FnOnce(&mut RoundState) -> T,
-    ) -> Option<T> {
+    ) -> Result<T, AccessError> {
         let mut games = self.0.lock().unwrap();
-        let game = games.get_mut(&id)?;
+        let game = games.get_mut(&id).ok_or(GameNotFound)?;
         let round = game.round_state()?;
-        Some(func(round))
+        Ok(func(round))
     }
 }
 

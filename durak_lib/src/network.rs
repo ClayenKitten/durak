@@ -12,6 +12,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    errors::AccessError,
     game::card::Card,
     identifiers::{GameId, PlayerId},
     status::{GameState, RoundStatus},
@@ -89,12 +90,18 @@ pub enum JoinGameResponse {
         player_id: PlayerId,
         token: Token,
     },
-    /// Game with provided id doesn't exist.
-    NotFound,
     /// Password doesn't match.
     InvalidPassword,
     /// Game is already full.
     TooManyPlayers,
+    /// Failed to access game.
+    AccessError(AccessError),
+}
+
+impl From<AccessError> for JoinGameResponse {
+    fn from(value: AccessError) -> Self {
+        Self::AccessError(value)
+    }
 }
 
 #[cfg(feature = "axum")]
@@ -102,9 +109,13 @@ impl IntoResponse for JoinGameResponse {
     fn into_response(self) -> Response {
         let code = match &self {
             JoinGameResponse::Ok { .. } => StatusCode::OK,
-            JoinGameResponse::NotFound => StatusCode::NOT_FOUND,
             JoinGameResponse::InvalidPassword => StatusCode::BAD_REQUEST,
             JoinGameResponse::TooManyPlayers => StatusCode::BAD_REQUEST,
+            JoinGameResponse::AccessError(ref error) => match error {
+                AccessError::AuthFailed(_) => StatusCode::UNAUTHORIZED,
+                AccessError::GameNotFound(_) => StatusCode::NOT_FOUND,
+                AccessError::InvalidPhase(_) => StatusCode::BAD_REQUEST,
+            },
         };
         (code, Json(self)).into_response()
     }
