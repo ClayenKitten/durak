@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 mod network;
 mod round;
 mod session;
