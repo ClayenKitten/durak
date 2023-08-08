@@ -32,7 +32,6 @@ async fn main() {
         .route("/create", post(create_game))
         .route("/join", post(join_game))
         .route("/game/start", post(start))
-        .route("/game/state", get(state))
         .route("/game/status", get(status))
         .route("/game/play", post(play_card))
         .route("/game/take", post(take))
@@ -134,14 +133,6 @@ async fn start(
             }
         })
         .unwrap_or((StatusCode::NOT_FOUND, "Game not found"))
-}
-
-/// Requests information about current [GameState](durak_lib::status::GameState).
-///
-/// Should be called regularly before game starts or when [status] fails.
-#[deprecated]
-async fn state() -> impl IntoResponse {
-    (StatusCode::GONE, "Deprecated")
 }
 
 /// Requests information about [GameStatus](durak_lib::status::GameStatus) for the current player.

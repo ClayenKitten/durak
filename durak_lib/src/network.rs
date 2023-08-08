@@ -15,7 +15,6 @@ use crate::{
     errors::AccessError,
     game::card::Card,
     identifiers::{GameId, PlayerId},
-    status::GameState,
 };
 
 /// Token used to uniquely identify each player session.
@@ -143,12 +142,5 @@ impl IntoResponse for PlayCardResponse {
             PlayCardResponse::AuthFailed => StatusCode::UNAUTHORIZED,
         };
         (code, Json(self)).into_response()
-    }
-}
-
-#[cfg(feature = "axum")]
-impl IntoResponse for GameState {
-    fn into_response(self) -> Response {
-        (StatusCode::OK, Json(self)).into_response()
     }
 }
