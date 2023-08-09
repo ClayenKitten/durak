@@ -4,15 +4,19 @@ use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_egui::egui::{
     Align, Button, Color32, Direction, Frame, Label, Layout, Margin, Sense, Ui, Vec2,
 };
-use durak_lib::{identifiers::PlayerId, status::lobby::LobbyStatus};
+use durak_lib::{
+    identifiers::PlayerId,
+    status::{lobby::LobbyStatus, StatusResponse},
+};
 
 use crate::{
-    network::{LeaveGameRequest, StartGameRequest},
+    network::{LeaveGameRequest, OnResponse, StartGameRequest, StatusRequest},
     session::Session,
     ui::{
         utils::{BUTTON_SIZE, MARGIN},
         UiContext,
     },
+    GameScreen, GameStarted,
 };
 
 use super::CurrentScreen;
@@ -101,8 +105,8 @@ fn display(
     })
 }
 
-fn request_status(mut commands: Commands) {
-    todo!();
+fn request_status(mut commands: Commands, session: Res<Session>) {
+    commands.spawn(StatusRequest(session.into_header()));
 }
 
 fn display_loading(mut ctx: UiContext) {
@@ -134,6 +138,29 @@ fn player_entry(ui: &mut Ui, player: PlayerId, name: &str, is_host: bool) {
         });
 }
 
-fn on_status_response() {
-    todo!();
+fn on_status_response(
+    mut commands: Commands,
+    mut responses: EventReader<OnResponse<StatusRequest>>,
+    mut state: ResMut<NextState<GameScreen>>,
+    mut started: EventWriter<GameStarted>,
+) {
+    let Some(OnResponse(status)) = responses.iter().last() else {
+        return;
+    };
+
+    match status {
+        StatusResponse::Lobby(lobby) => {
+            commands.insert_resource(lobby.clone());
+        }
+        StatusResponse::Round(round) => {
+            started.send(GameStarted {
+                trump: round.trump,
+                opponents: round.opponents.clone(),
+            });
+            state.0 = Some(GameScreen::Round);
+            commands.remove_resource::<LobbyStatus>();
+        }
+        StatusResponse::Finished => todo!(),
+        StatusResponse::Error(_) => todo!(),
+    }
 }
