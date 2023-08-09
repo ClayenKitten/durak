@@ -63,6 +63,7 @@ async fn create_game(
     let game_id = games.create(data.name);
     let player_id = PlayerId::new(0);
     let token = auth.generate_token(game_id, player_id);
+    auth.store_password(game_id, data.password);
     info!("created game `{game_id}`");
 
     CreateGameResponse::Ok {
