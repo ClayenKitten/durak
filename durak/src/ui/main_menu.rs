@@ -19,12 +19,17 @@ impl Plugin for MainMenuPlugin {
             .add_plugins(CreateGameScreen)
             .add_plugins(JoinGameScreen)
             .add_plugins(LobbyScreen)
-            .add_systems(OnEnter(GameScreen::MainMenu), reset_screen);
+            .add_systems(OnEnter(GameScreen::MainMenu), set_screen)
+            .add_systems(OnExit(GameScreen::MainMenu), reset_screen);
     }
 }
 
-fn reset_screen(mut next_state: ResMut<NextState<CurrentScreen>>) {
+fn set_screen(mut next_state: ResMut<NextState<CurrentScreen>>) {
     next_state.0 = Some(CurrentScreen::MainMenu);
+}
+
+fn reset_screen(mut next_state: ResMut<NextState<CurrentScreen>>) {
+    next_state.0 = Some(CurrentScreen::None);
 }
 
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
