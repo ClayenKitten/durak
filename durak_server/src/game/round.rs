@@ -164,6 +164,7 @@ impl RoundState {
     /// Generates status report for specific player.
     pub fn status(&self, player: PlayerId) -> RoundStatus {
         RoundStatus {
+            trump: self.trump,
             turn: self.turn(),
             attacker: self.attacker,
             defender: self.defender,

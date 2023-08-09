@@ -1,14 +1,15 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    game::{hand::Hand, player::Opponent, table::Table},
+    game::{card::Card, hand::Hand, player::Opponent, table::Table},
     identifiers::PlayerId,
 };
 
 /// Status of the ongoing game.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[cfg_attr(feature = "bevy", derive(bevy_ecs::prelude::Resource))]
 pub struct RoundStatus {
+    /// Trump for the round.
+    pub trump: Card,
     /// What player should take action now.
     pub turn: PlayerId,
     /// Attacker of the round.
