@@ -7,7 +7,9 @@ pub mod lobby;
 pub mod round;
 
 #[cfg(feature = "axum")]
-use axum::response::IntoResponse;
+use axum::{response::IntoResponse, Json};
+#[cfg(feature = "axum")]
+use http::StatusCode;
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
@@ -32,7 +34,16 @@ pub enum StatusResponse {
 #[cfg(feature = "axum")]
 impl IntoResponse for StatusResponse {
     fn into_response(self) -> axum::response::Response {
-        todo!()
+        let status_code = match self {
+            StatusResponse::Lobby(_) => StatusCode::OK,
+            StatusResponse::Round(_) => StatusCode::OK,
+            StatusResponse::Finished => StatusCode::OK,
+            StatusResponse::Error(ref error) => match error {
+                StatusRequestError::GameNotFound(_) => StatusCode::NOT_FOUND,
+                StatusRequestError::AuthFailed(_) => StatusCode::UNAUTHORIZED,
+            },
+        };
+        (status_code, Json(self)).into_response()
     }
 }
 
