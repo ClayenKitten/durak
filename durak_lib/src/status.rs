@@ -6,7 +6,9 @@
 pub mod lobby;
 pub mod round;
 
+#[cfg(feature = "axum")]
 use axum::response::IntoResponse;
+
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

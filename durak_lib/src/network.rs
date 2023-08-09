@@ -1,12 +1,12 @@
 //! Request and response data structures used by both server and client.
 
-use axum::Json;
 use http::HeaderValue;
 
 #[cfg(feature = "axum")]
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
+    Json,
 };
 
 use serde::{Deserialize, Serialize};
