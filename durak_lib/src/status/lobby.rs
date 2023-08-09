@@ -1,11 +1,4 @@
-use axum::{
-    response::{IntoResponse, Response},
-    Json,
-};
-use http::StatusCode;
 use serde::{Deserialize, Serialize};
-
-use crate::errors::AccessError;
 
 use super::LobbyPlayerData;
 
@@ -22,29 +15,5 @@ impl LobbyStatus {
     pub fn can_start(&self) -> bool {
         // TODO: allow more than two players.
         self.players.len() == 2
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum LobbyStatusResponse {
-    Ok(LobbyStatus),
-    /// Game is not preparing.
-    AccessError(AccessError),
-}
-
-impl From<AccessError> for LobbyStatusResponse {
-    fn from(value: AccessError) -> Self {
-        LobbyStatusResponse::AccessError(value)
-    }
-}
-
-#[cfg(feature = "axum")]
-impl IntoResponse for LobbyStatusResponse {
-    fn into_response(self) -> Response {
-        let code = match self {
-            LobbyStatusResponse::Ok(_) => StatusCode::OK,
-            LobbyStatusResponse::AccessError(_) => StatusCode::BAD_REQUEST,
-        };
-        (code, Json(self)).into_response()
     }
 }

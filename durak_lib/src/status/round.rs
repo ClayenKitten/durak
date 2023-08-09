@@ -1,17 +1,11 @@
-use axum::{
-    response::{IntoResponse, Response},
-    Json,
-};
-use http::StatusCode;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    errors::AccessError,
     game::{hand::Hand, player::Opponent, table::Table},
     identifiers::PlayerId,
 };
 
-/// Status of the ongoing game that is known to specific player.
+/// Status of the ongoing game.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy_ecs::prelude::Resource))]
 pub struct RoundStatus {
@@ -31,31 +25,4 @@ pub struct RoundStatus {
     ///
     /// Doesn't include player that requested status report.
     pub opponents: Vec<Opponent>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum RoundStatusResponse {
-    Ok(RoundStatus),
-    /// Game hasn't started yet.
-    NotStarted,
-    /// Failed to access some data.
-    AccessError(AccessError),
-}
-
-impl From<AccessError> for RoundStatusResponse {
-    fn from(value: AccessError) -> Self {
-        RoundStatusResponse::AccessError(value)
-    }
-}
-
-#[cfg(feature = "axum")]
-impl IntoResponse for RoundStatusResponse {
-    fn into_response(self) -> Response {
-        let code = match self {
-            RoundStatusResponse::Ok(_) => StatusCode::OK,
-            RoundStatusResponse::NotStarted => StatusCode::BAD_REQUEST,
-            RoundStatusResponse::AccessError(_) => StatusCode::BAD_REQUEST,
-        };
-        (code, Json(self)).into_response()
-    }
 }

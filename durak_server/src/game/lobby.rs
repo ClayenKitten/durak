@@ -1,4 +1,7 @@
-use durak_lib::{identifiers::PlayerId, status::LobbyPlayerData};
+use durak_lib::{
+    identifiers::PlayerId,
+    status::{lobby::LobbyStatus, LobbyPlayerData},
+};
 
 use super::round::RoundState;
 
@@ -12,6 +15,13 @@ impl LobbyState {
     pub(super) fn new() -> Self {
         Self {
             players: Vec::with_capacity(4),
+        }
+    }
+
+    /// Generates status report.
+    pub fn status(&self) -> LobbyStatus {
+        LobbyStatus {
+            players: self.players.clone(),
         }
     }
 

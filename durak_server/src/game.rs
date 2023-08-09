@@ -10,7 +10,7 @@ use self::{finished::FinishedState, lobby::LobbyState, round::RoundState};
 
 #[derive(Debug)]
 pub struct Game {
-    phase: GamePhase,
+    pub phase: GamePhase,
 }
 
 impl Game {
@@ -65,7 +65,7 @@ impl Game {
 
 /// Phase-specific state of the game.
 #[derive(Debug)]
-enum GamePhase {
+pub enum GamePhase {
     /// Preparation phase of the game.
     Lobby(LobbyState),
     /// Main phase of the game.

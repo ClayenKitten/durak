@@ -8,7 +8,7 @@ use durak_lib::{
     game::card::Card,
     identifiers::PlayerId,
     network::{CreateGameData, CreateGameResponse, JoinGameData, JoinGameResponse},
-    status::round::RoundStatusResponse,
+    status::{StatusRequestError::GameNotFound, StatusResponse},
 };
 
 use axum::{
@@ -18,6 +18,7 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use game::GamePhase;
 use state::{Auth, Games};
 use std::net::SocketAddr;
 use tracing::{info, Level};
@@ -135,18 +136,17 @@ async fn start(
         .unwrap_or((StatusCode::NOT_FOUND, "Game not found"))
 }
 
-/// Requests information about [GameStatus](durak_lib::status::GameStatus) for the current player.
+/// Requests information about [StatusResponse] for the current player.
 ///
 /// Should be called regularly during the game unless it is player's turn.
-async fn status(
-    State(games): State<Games>,
-    Authenticate(player): Authenticate,
-) -> impl IntoResponse {
+async fn status(State(games): State<Games>, Authenticate(auth): Authenticate) -> impl IntoResponse {
     games
-        .with_started_game(player.game_id, |round| {
-            RoundStatusResponse::Ok(round.status(player.player_id))
+        .with_game(auth.game_id, |game| match &game.phase {
+            GamePhase::Lobby(lobby) => StatusResponse::Lobby(lobby.status()),
+            GamePhase::Round(round) => StatusResponse::Round(round.status(auth.player_id)),
+            GamePhase::Finished(_) => StatusResponse::Finished,
         })
-        .unwrap_or_else(|err| err.into())
+        .unwrap_or_else(|not_found| StatusResponse::Error(GameNotFound(not_found)))
 }
 
 /// Plays specified card on the table.
