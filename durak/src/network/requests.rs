@@ -6,7 +6,7 @@ use bevy_mod_reqwest::reqwest::{
 use durak_lib::{
     game::card::Card,
     network::{AuthHeader, CreateGameData, CreateGameResponse, JoinGameData, JoinGameResponse},
-    status::round::RoundStatus,
+    status::StatusResponse,
 };
 
 use super::MyRequest;
@@ -90,7 +90,7 @@ impl MyRequest for LeaveGameRequest {
 pub struct StatusRequest(pub AuthHeader);
 
 impl MyRequest for StatusRequest {
-    type Response = RoundStatus;
+    type Response = StatusResponse;
 
     type Query = ();
 
