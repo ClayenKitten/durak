@@ -29,7 +29,10 @@ impl Plugin for LobbyScreen {
                     request_status.run_if(on_timer(Duration::from_secs_f32(0.5))),
                 )
                     .run_if(resource_exists::<Session>()),
-                display_loading.run_if(not(resource_exists::<Session>())),
+                display_loading.run_if(
+                    not(resource_exists::<Session>())
+                        .or_else(not(resource_exists::<LobbyStatus>())),
+                ),
                 on_status_response,
             )
                 .run_if(in_state(CurrentScreen::Lobby)),
