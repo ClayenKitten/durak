@@ -1,10 +1,13 @@
 mod card;
 mod deck;
 
-use std::time::Duration;
+use std::{collections::HashSet, time::Duration};
 
 use bevy::{prelude::*, time::common_conditions::on_timer};
-use durak_lib::game::{card::CardSuit, hand::Hand, player::Opponent, table::Table};
+use durak_lib::{
+    game::{card::CardSuit, hand::Hand, player::Opponent, table::Table},
+    status::{round::RoundStatus, StatusResponse},
+};
 
 use crate::{
     network::{OnResponse, StatusRequest},
@@ -53,24 +56,66 @@ fn request_status(session: Res<Session>, mut commands: Commands) {
 }
 
 fn on_status_response(
+    commands: Commands,
     mut response: EventReader<OnResponse<StatusRequest>>,
     mut table: Query<&mut Table>,
     mut hand: Query<&mut Hand>,
     mut deck: Query<&mut Deck>,
+    opponents: Query<(Entity, &mut Opponent)>,
 ) {
     let Some(OnResponse(status)) = response.iter().last() else {
         return;
     };
+    match status {
+        StatusResponse::Lobby(_) => todo!(),
+        StatusResponse::Round(round) => {
+            let mut hand = hand.single_mut();
+            *hand = round.hand.clone();
 
-    let mut hand = hand.single_mut();
-    *hand = status.hand.clone();
+            let mut table = table.single_mut();
+            *table = round.table.clone();
 
-    let mut table = table.single_mut();
-    *table = status.table.clone();
+            let mut deck = deck.single_mut();
+            if deck.left != round.deck_size {
+                deck.left = round.deck_size;
+            }
 
-    let mut deck = deck.single_mut();
-    if deck.left != status.deck_size {
-        deck.left = status.deck_size;
+            update_opponent_list(commands, opponents, round);
+        }
+        StatusResponse::Finished => todo!(),
+        StatusResponse::Error(_) => todo!(),
+    }
+
+    fn update_opponent_list(
+        mut commands: Commands,
+        mut opponents: Query<(Entity, &mut Opponent)>,
+        round: &RoundStatus,
+    ) {
+        let mut processed = HashSet::with_capacity(6);
+        for (entity, mut opponent) in opponents.iter_mut() {
+            // Update existing
+            for received in round.opponents.iter() {
+                if opponent.id == received.id {
+                    if opponent.cards_number != received.cards_number {
+                        opponent.cards_number = received.cards_number;
+                    }
+                    if opponent.name != received.name {
+                        opponent.name = received.name.clone();
+                    }
+                    processed.insert(opponent.id);
+                }
+            }
+            // Remove if not found
+            if !processed.contains(&opponent.id) {
+                commands.entity(entity).despawn_recursive();
+            }
+        }
+        // Add new
+        for received in round.opponents.iter() {
+            if !processed.contains(&received.id) {
+                commands.spawn(received.clone());
+            }
+        }
     }
 }
 
