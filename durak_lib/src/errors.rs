@@ -1,6 +1,19 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+#[derive(Debug, Error, Serialize, Deserialize)]
+#[error("failed to play card")]
+pub enum PlayCardError {
+    #[error("too much attacking cards: only six cards can attack at time")]
+    TooMuchAttackingCards,
+    #[error("it is turn of another player")]
+    InvalidTurn,
+    #[error("that card can't be placed at the table")]
+    CantPlace,
+    #[error("that card is not in hand")]
+    NotInHand,
+}
+
 /// Failed to access some data.
 #[derive(Debug, Error, Serialize, Deserialize)]
 pub enum AccessError {

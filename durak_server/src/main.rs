@@ -158,14 +158,15 @@ async fn play_card(
 ) -> impl IntoResponse {
     games
         .with_started_game(player.game_id, |round| {
-            if round.play_card(player.player_id, card) {
-                info!(
-                    "card played by player #{} in game `{}`",
-                    player.player_id, player.game_id
-                );
-                StatusCode::OK
-            } else {
-                StatusCode::BAD_REQUEST
+            match round.play_card(player.player_id, card) {
+                Ok(_) => {
+                    info!(
+                        "card played by player #{} in game `{}`",
+                        player.player_id, player.game_id
+                    );
+                    StatusCode::OK
+                }
+                Err(_) => StatusCode::BAD_REQUEST,
             }
         })
         .unwrap_or(StatusCode::NOT_FOUND)

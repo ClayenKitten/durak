@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use durak_lib::{
+    errors::PlayCardError,
     game::{
         card::{Card, CardRank, CardSuit},
         deck::Deck,
@@ -102,30 +103,30 @@ impl RoundState {
 /// Player actions.
 impl RoundState {
     /// Places card on the table.
-    ///
-    /// Returns `true` if played successfully.
-    pub fn play_card(&mut self, player_id: PlayerId, card: Card) -> bool {
+    pub fn play_card(&mut self, player_id: PlayerId, card: Card) -> Result<(), PlayCardError> {
         let Some((&player_id, hand)) = self.hands.iter_mut().find(|(id, _)| **id == player_id) else {
-            return false;
+            panic!("Authenticated player not found");
         };
 
-        if self.attacker == player_id {
-            if hand.contains(card) && self.table.attack(card) {
-                hand.remove(card);
-                true
-            } else {
-                false
+        if player_id == self.attacker || player_id == self.defender {
+            if !hand.contains(card) {
+                return Err(PlayCardError::NotInHand);
             }
-        } else if self.defender == player_id {
-            if hand.contains(card) && self.table.defend(card, self.trump.suit) {
-                hand.remove(card);
-                true
+
+            if player_id == self.attacker {
+                self.table.attack(card)?;
             } else {
-                false
+                self.table.defend(card, self.trump.suit)?;
+            }
+            hand.remove(card);
+
+            if let Some(winner) = self.check_winner() {
+                todo!();
             }
         } else {
-            false
+            return Err(PlayCardError::InvalidTurn);
         }
+        Ok(())
     }
 
     /// Attacker decided to stop an attack.

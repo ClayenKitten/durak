@@ -2,6 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::errors::PlayCardError;
+
 use super::card::{Card, CardSuit};
 
 /// Table is the main location where the game is played.
@@ -20,46 +22,45 @@ impl Table {
     }
 
     /// Places provided card as attacking.
-    ///
-    /// Returns `true` if card placed successfully.
     // TODO: allow attacking by multiple cards at once.
-    pub fn attack(&mut self, card: Card) -> bool {
-        if self.count() >= 6 || !self.all_attacks_answered() {
-            return false;
+    pub fn attack(&mut self, card: Card) -> Result<(), PlayCardError> {
+        if self.count() >= 6 {
+            return Err(PlayCardError::TooMuchAttackingCards);
+        }
+        if !self.all_attacks_answered() {
+            return Err(PlayCardError::InvalidTurn);
         }
         if self.count() == 0 {
             self.0.push((card, None));
-            return true;
+            return Ok(());
         }
         for (attacking, defending) in self.0.iter() {
             if attacking.rank == card.rank {
                 self.0.push((card, None));
-                return true;
+                return Ok(());
             }
             if defending.is_some_and(|def| def.rank == card.rank) {
                 self.0.push((card, None));
-                return true;
+                return Ok(());
             }
         }
-        false
+        Err(PlayCardError::CantPlace)
     }
 
     /// Places provided card as defending.
-    ///
-    /// Returns `true` if card placed successfully.
     // TODO: allow specifying which card to defend against.
-    pub fn defend(&mut self, card: Card, trump: CardSuit) -> bool {
+    pub fn defend(&mut self, card: Card, trump: CardSuit) -> Result<(), PlayCardError> {
         if self.all_attacks_answered() {
-            return false;
+            return Err(PlayCardError::InvalidTurn);
         }
         let Some((attacking, defending @ None)) = self.0.last_mut() else {
-            return false;
+            return Err(PlayCardError::InvalidTurn);
         };
         if !card.can_beat(*attacking, trump) {
-            return false;
+            return Err(PlayCardError::CantPlace);
         }
         *defending = Some(card);
-        true
+        Ok(())
     }
 
     /// Takes all cards from the table. Table is cleared.
