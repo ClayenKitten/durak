@@ -1,5 +1,6 @@
 mod card;
 mod deck;
+pub mod turn;
 
 use std::{collections::HashSet, time::Duration};
 
@@ -11,6 +12,7 @@ use durak_lib::{
 
 use crate::{
     network::{OnResponse, StatusRequest},
+    round::turn::Turn,
     session::Session,
     ui::game::display_ui,
     GameScreen,
@@ -56,7 +58,8 @@ fn request_status(session: Res<Session>, mut commands: Commands) {
 }
 
 fn on_status_response(
-    commands: Commands,
+    session: Res<Session>,
+    mut commands: Commands,
     mut response: EventReader<OnResponse<StatusRequest>>,
     mut table: Query<&mut Table>,
     mut hand: Query<&mut Hand>,
@@ -78,6 +81,14 @@ fn on_status_response(
             let mut deck = deck.single_mut();
             if deck.left != round.deck_size {
                 deck.left = round.deck_size;
+            }
+
+            if round.attacker == session.id {
+                commands.insert_resource(Turn::Attacker);
+            } else if round.defender == session.id {
+                commands.insert_resource(Turn::Defender);
+            } else {
+                commands.remove_resource::<Turn>();
             }
 
             update_opponent_list(commands, opponents, round);
