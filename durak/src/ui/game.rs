@@ -32,7 +32,7 @@ pub fn display_ui(
                 if let Some(turn) = turn {
                     match *turn {
                         Turn::Attacker => {
-                            if table.single().all_attacks_answered() {
+                            if table.single().can_retreat() {
                                 if ui
                                     .add(Button::new("Retreat").min_size(BUTTON_SIZE))
                                     .clicked()
@@ -42,7 +42,7 @@ pub fn display_ui(
                             }
                         }
                         Turn::Defender => {
-                            if !table.single().all_attacks_answered() {
+                            if table.single().can_take() {
                                 if ui.add(Button::new("Take").min_size(BUTTON_SIZE)).clicked() {
                                     commands.spawn(TakeRequest(session.into_header()));
                                 }

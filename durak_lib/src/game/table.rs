@@ -66,31 +66,33 @@ impl Table {
     /// Takes all cards from the table. Table is cleared.
     ///
     /// Returns all cards that were on the table.
-    /// Returns `None` if taking cards is against rules.
+    /// Returns `None` if taking cards is against the rules.
     pub fn take(&mut self) -> Option<Vec<Card>> {
-        if self.all_attacks_answered() {
-            return None;
-        }
-        let cards = std::mem::replace(&mut self.0, Vec::with_capacity(6));
-        let mut result = Vec::with_capacity(cards.len() * 2);
-        for (attacking, defending) in cards {
-            result.push(attacking);
-            if let Some(defending) = defending {
-                result.push(defending);
+        if self.can_take() {
+            let cards = std::mem::replace(&mut self.0, Vec::with_capacity(6));
+            let mut result = Vec::with_capacity(cards.len() * 2);
+            for (attacking, defending) in cards {
+                result.push(attacking);
+                if let Some(defending) = defending {
+                    result.push(defending);
+                }
             }
+            Some(result)
+        } else {
+            None
         }
-        Some(result)
     }
 
     /// Removes all cards from the table.
     ///
     /// Returns `true` if retreat was successful.
     pub fn retreat(&mut self) -> bool {
-        if !self.all_attacks_answered() {
-            return false;
+        if self.can_retreat() {
+            self.0.clear();
+            true
+        } else {
+            false
         }
-        self.0.clear();
-        true
     }
 
     /// Returns `true` if all attacks on the table are answered.
@@ -119,6 +121,24 @@ impl Table {
     /// Returns `true` if table contains the card.
     pub fn contains(&self, card: Card) -> bool {
         self.0.iter().any(|c| c.0 == card || c.1 == Some(card))
+    }
+
+    /// Returns `true` if table is empty.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+/// Methods that check if action is allowed.
+impl Table {
+    /// Returns `true` if the attacker can retreat.
+    pub fn can_retreat(&self) -> bool {
+        self.all_attacks_answered() && !self.is_empty()
+    }
+
+    /// Returns `true` if the defender can take cards.
+    pub fn can_take(&self) -> bool {
+        !self.all_attacks_answered()
     }
 }
 
