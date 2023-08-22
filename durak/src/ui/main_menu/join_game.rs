@@ -7,6 +7,7 @@ use durak_lib::{
 
 use crate::{
     network::{JoinGameRequest, OnResponse},
+    persistence::Configuration,
     session::Session,
     ui::{
         utils::{BigTextInput, BUTTON_SIZE, MARGIN},
@@ -20,13 +21,21 @@ pub struct JoinGameScreen;
 
 impl Plugin for JoinGameScreen {
     fn build(&self, app: &mut App) {
-        app.init_resource::<ScreenState>().add_systems(
-            Update,
-            (
-                display.run_if(in_state(CurrentScreen::JoinGame)),
-                on_join_response,
-            ),
-        );
+        app.init_resource::<ScreenState>()
+            .add_systems(
+                Update,
+                (
+                    display.run_if(in_state(CurrentScreen::JoinGame)),
+                    on_join_response,
+                ),
+            )
+            .add_systems(
+                OnEnter(CurrentScreen::JoinGame),
+                |mut screen: ResMut<ScreenState>| {
+                    screen.id = String::new();
+                    screen.password = String::new();
+                },
+            );
     }
 }
 
@@ -34,6 +43,7 @@ fn display(
     mut ctx: UiContext,
     mut commands: Commands,
     mut state: ResMut<ScreenState>,
+    mut config: ResMut<Configuration>,
     mut next_state: ResMut<NextState<CurrentScreen>>,
 ) {
     ctx.margin(MARGIN).show(|ui| {
@@ -41,7 +51,9 @@ fn display(
             ui.style_mut().spacing.item_spacing = Vec2::new(0., 10.);
 
             ui.label("Name:");
-            ui.add(BigTextInput::new(&mut state.name));
+            if ui.add(BigTextInput::new(&mut config.name)).lost_focus() {
+                let _ = config.save();
+            }
             ui.add_space(25.);
 
             ui.style_mut().spacing.item_spacing = Vec2::new(50., 50.);
@@ -70,15 +82,14 @@ fn display(
                     .add_enabled(id.is_ok(), Button::new("Join").min_size(BUTTON_SIZE))
                     .clicked()
                 {
-                    let Ok(id) = id  else {
-                            return;
-                        };
-                    commands.spawn(JoinGameRequest(JoinGameData {
-                        id,
-                        name: state.name.clone(),
-                        password: state.password.clone(),
-                    }));
-                    next_state.0 = Some(CurrentScreen::Lobby);
+                    if let Ok(id) = id {
+                        commands.spawn(JoinGameRequest(JoinGameData {
+                            id,
+                            name: config.name.clone(),
+                            password: state.password.clone(),
+                        }));
+                        next_state.0 = Some(CurrentScreen::Lobby);
+                    };
                 }
             });
         });
@@ -88,7 +99,7 @@ fn display(
 fn on_join_response(
     mut commands: Commands,
     mut events: EventReader<OnResponse<JoinGameRequest>>,
-    state: Res<ScreenState>,
+    config: Res<Configuration>,
     mut next_menu_state: ResMut<NextState<CurrentScreen>>,
 ) {
     if let Some(OnResponse(response)) = events.iter().next() {
@@ -99,7 +110,7 @@ fn on_join_response(
                 token,
             } => {
                 commands.insert_resource(Session {
-                    name: state.name.clone(),
+                    name: config.name.clone(),
                     id: *player_id,
                     game: *game_id,
                     token: *token,
@@ -117,6 +128,5 @@ fn on_join_response(
 #[derive(Resource, Debug, Clone, Default)]
 struct ScreenState {
     pub id: String,
-    pub name: String,
     pub password: String,
 }

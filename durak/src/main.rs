@@ -1,6 +1,7 @@
 #![windows_subsystem = "windows"]
 
 mod network;
+mod persistence;
 mod round;
 mod session;
 mod ui;
@@ -12,6 +13,7 @@ use durak_lib::{
 };
 
 use network::NetworkPlugin;
+use persistence::Configuration;
 use round::RoundPlugin;
 use ui::UiPlugin;
 
@@ -41,6 +43,17 @@ fn main() {
 }
 
 fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
+    match Configuration::load() {
+        Ok(configuration) => {
+            commands.insert_resource(configuration);
+        }
+        Err(_) => {
+            let configuration = Configuration::default();
+            let _ = Configuration::save(&configuration);
+            commands.insert_resource(configuration);
+        }
+    }
+
     commands.spawn(Camera2dBundle {
         projection: OrthographicProjection {
             scaling_mode: ScalingMode::Fixed {
