@@ -5,6 +5,7 @@ use bevy_egui::{
     egui::{Button, CentralPanel, Frame, Vec2},
     EguiContexts,
 };
+use durak_lib::game::table::Table;
 
 use crate::{
     network::{RetreatRequest, TakeRequest},
@@ -19,6 +20,7 @@ pub fn display_ui(
     mut ctx: EguiContexts,
     mut commands: Commands,
     session: Res<Session>,
+    table: Query<&Table>,
     turn: Option<Res<Turn>>,
 ) {
     let ctx = ctx.ctx_mut();
@@ -30,16 +32,20 @@ pub fn display_ui(
                 if let Some(turn) = turn {
                     match *turn {
                         Turn::Attacker => {
-                            if ui
-                                .add(Button::new("Retreat").min_size(BUTTON_SIZE))
-                                .clicked()
-                            {
-                                commands.spawn(RetreatRequest(session.into_header()));
+                            if table.single().all_attacks_answered() {
+                                if ui
+                                    .add(Button::new("Retreat").min_size(BUTTON_SIZE))
+                                    .clicked()
+                                {
+                                    commands.spawn(RetreatRequest(session.into_header()));
+                                }
                             }
                         }
                         Turn::Defender => {
-                            if ui.add(Button::new("Take").min_size(BUTTON_SIZE)).clicked() {
-                                commands.spawn(TakeRequest(session.into_header()));
+                            if !table.single().all_attacks_answered() {
+                                if ui.add(Button::new("Take").min_size(BUTTON_SIZE)).clicked() {
+                                    commands.spawn(TakeRequest(session.into_header()));
+                                }
                             }
                         }
                     }
