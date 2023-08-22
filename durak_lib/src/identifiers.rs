@@ -27,7 +27,9 @@ impl FromStr for GameId {
             let Some(digit) = char.to_digit(16) else {
                 return Err(());
             };
-            result += digit as u32 * 16u32.pow(index as u32);
+            let base_multiplier = 16u32.checked_pow(index as u32).ok_or(())?;
+            let addition = (digit as u32).checked_mul(base_multiplier).ok_or(())?;
+            result += addition;
         }
         Ok(GameId(result))
     }
