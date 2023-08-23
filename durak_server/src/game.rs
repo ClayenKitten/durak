@@ -4,7 +4,7 @@ pub mod finished;
 pub mod lobby;
 pub mod round;
 
-use durak_lib::errors::InvalidPhase;
+use durak_lib::{errors::InvalidPhase, identifiers::PlayerId};
 
 use self::{finished::FinishedState, lobby::LobbyState, round::RoundState};
 
@@ -78,4 +78,9 @@ impl GamePhase {
     pub fn new() -> Self {
         GamePhase::Lobby(LobbyState::new())
     }
+}
+
+pub enum CardPlayedOutcome {
+    Win(PlayerId),
+    None,
 }

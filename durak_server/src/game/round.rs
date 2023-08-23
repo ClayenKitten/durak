@@ -13,6 +13,8 @@ use durak_lib::{
     status::{round::RoundStatus, PlayerData},
 };
 
+use super::CardPlayedOutcome;
+
 /// State of started game.
 #[derive(Debug)]
 pub struct RoundState {
@@ -103,7 +105,11 @@ impl RoundState {
 /// Player actions.
 impl RoundState {
     /// Places card on the table.
-    pub fn play_card(&mut self, player_id: PlayerId, card: Card) -> Result<(), PlayCardError> {
+    pub fn play_card(
+        &mut self,
+        player_id: PlayerId,
+        card: Card,
+    ) -> Result<CardPlayedOutcome, PlayCardError> {
         let Some((&player_id, hand)) = self.hands.iter_mut().find(|(id, _)| **id == player_id) else {
             panic!("Authenticated player not found");
         };
@@ -121,12 +127,12 @@ impl RoundState {
             hand.remove(card);
 
             if let Some(winner) = self.check_winner() {
-                todo!();
+                return Ok(CardPlayedOutcome::Win(winner));
             }
         } else {
             return Err(PlayCardError::InvalidTurn);
         }
-        Ok(())
+        Ok(CardPlayedOutcome::None)
     }
 
     /// Attacker decided to stop an attack.
