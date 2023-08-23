@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-use super::LobbyPlayerData;
+use super::PlayerData;
 
 /// Status of the preparing game.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[cfg_attr(feature = "bevy", derive(bevy_ecs::prelude::Resource))]
 pub struct LobbyStatus {
     /// List of joined players.
-    pub players: Vec<LobbyPlayerData>,
+    pub players: Vec<PlayerData>,
 }
 
 impl LobbyStatus {

@@ -57,7 +57,7 @@ pub enum StatusRequestError {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LobbyPlayerData {
+pub struct PlayerData {
     pub id: PlayerId,
     pub name: String,
 }

@@ -1,13 +1,13 @@
-use durak_lib::{identifiers::PlayerId, status::LobbyPlayerData};
+use durak_lib::{identifiers::PlayerId, status::PlayerData};
 
 #[derive(Debug)]
 pub struct FinishedState {
-    winner: PlayerId,
-    players: Vec<LobbyPlayerData>,
+    pub winner: PlayerId,
+    pub players: Vec<PlayerData>,
 }
 
 impl FinishedState {
-    pub fn winner(&self) -> LobbyPlayerData {
+    pub fn winner(&self) -> PlayerData {
         self.players
             .iter()
             .find(|player| player.id == self.winner)

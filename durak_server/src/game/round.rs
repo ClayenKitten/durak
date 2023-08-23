@@ -10,7 +10,7 @@ use durak_lib::{
         table::Table,
     },
     identifiers::PlayerId,
-    status::{round::RoundStatus, LobbyPlayerData},
+    status::{round::RoundStatus, PlayerData},
 };
 
 /// State of started game.
@@ -21,13 +21,13 @@ pub struct RoundState {
     pub table: Table,
     pub attacker: PlayerId,
     pub defender: PlayerId,
-    pub players: Vec<LobbyPlayerData>,
+    pub players: Vec<PlayerData>,
     pub hands: HashMap<PlayerId, Hand>,
 }
 
 /// New round creation.
 impl RoundState {
-    pub fn new(players: Vec<LobbyPlayerData>) -> Self {
+    pub fn new(players: Vec<PlayerData>) -> Self {
         let mut deck = Self::create_deck();
         let hands = Self::create_hands(&mut deck, players.iter().map(|p| p.id).collect());
         let trump = Self::pick_trump(&mut deck);
@@ -176,7 +176,7 @@ impl RoundState {
                 .iter()
                 .filter(|p| p.id != player)
                 .cloned()
-                .map(|LobbyPlayerData { id, name }| Opponent {
+                .map(|PlayerData { id, name }| Opponent {
                     id,
                     name,
                     cards_number: self.hands.get(&id).unwrap().count() as u8,

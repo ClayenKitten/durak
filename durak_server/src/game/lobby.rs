@@ -1,13 +1,13 @@
 use durak_lib::{
     identifiers::PlayerId,
-    status::{lobby::LobbyStatus, LobbyPlayerData},
+    status::{lobby::LobbyStatus, PlayerData},
 };
 
 use super::round::RoundState;
 
 #[derive(Debug)]
 pub struct LobbyState {
-    players: Vec<LobbyPlayerData>,
+    players: Vec<PlayerData>,
 }
 
 impl LobbyState {
@@ -34,7 +34,7 @@ impl LobbyState {
             return None;
         }
         let id = PlayerId::new(self.players.len() as u8);
-        self.players.push(LobbyPlayerData { id, name });
+        self.players.push(PlayerData { id, name });
         Some(id)
     }
 
