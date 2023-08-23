@@ -145,7 +145,7 @@ async fn status(State(games): State<Games>, Authenticate(auth): Authenticate) ->
         .with_game(auth.game_id, |game| match &game.phase {
             GamePhase::Lobby(lobby) => StatusResponse::Lobby(lobby.status()),
             GamePhase::Round(round) => StatusResponse::Round(round.status(auth.player_id)),
-            GamePhase::Finished(_) => StatusResponse::Finished,
+            GamePhase::Finished(finished) => StatusResponse::Finished(finished.status()),
         })
         .unwrap_or_else(|not_found| StatusResponse::Error(GameNotFound(not_found)))
 }

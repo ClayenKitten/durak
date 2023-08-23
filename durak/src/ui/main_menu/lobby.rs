@@ -160,7 +160,7 @@ fn on_status_response(
             state.0 = Some(GameScreen::Round);
             commands.remove_resource::<LobbyStatus>();
         }
-        StatusResponse::Finished => todo!(),
+        StatusResponse::Finished(_) => todo!(),
         StatusResponse::Error(_) => todo!(),
     }
 }

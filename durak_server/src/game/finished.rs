@@ -1,4 +1,7 @@
-use durak_lib::{identifiers::PlayerId, status::PlayerData};
+use durak_lib::{
+    identifiers::PlayerId,
+    status::{finished::FinishedStatus, PlayerData},
+};
 
 #[derive(Debug)]
 pub struct FinishedState {
@@ -7,6 +10,14 @@ pub struct FinishedState {
 }
 
 impl FinishedState {
+    /// Generates status report.
+    pub fn status(&self) -> FinishedStatus {
+        FinishedStatus {
+            winner: self.winner,
+            players: self.players.clone(),
+        }
+    }
+
     pub fn winner(&self) -> PlayerData {
         self.players
             .iter()

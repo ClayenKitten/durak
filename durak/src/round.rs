@@ -93,7 +93,7 @@ fn on_status_response(
 
             update_opponent_list(commands, opponents, round);
         }
-        StatusResponse::Finished => todo!(),
+        StatusResponse::Finished(_) => todo!(),
         StatusResponse::Error(_) => todo!(),
     }
 

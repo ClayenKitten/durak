@@ -3,6 +3,7 @@
 //! The status is a report of the current state of the game, generated specifically for the player.
 //! It only contains data known to the player that requested the report.
 
+pub mod finished;
 pub mod lobby;
 pub mod round;
 
@@ -19,7 +20,7 @@ use crate::{
     identifiers::PlayerId,
 };
 
-use self::{lobby::LobbyStatus, round::RoundStatus};
+use self::{finished::FinishedStatus, lobby::LobbyStatus, round::RoundStatus};
 
 /// Response to the status request.
 #[derive(Debug, Serialize, Deserialize)]
@@ -27,7 +28,7 @@ use self::{lobby::LobbyStatus, round::RoundStatus};
 pub enum StatusResponse {
     Lobby(LobbyStatus),
     Round(RoundStatus),
-    Finished,
+    Finished(FinishedStatus),
     Error(StatusRequestError),
 }
 
@@ -37,7 +38,7 @@ impl IntoResponse for StatusResponse {
         let status_code = match self {
             StatusResponse::Lobby(_) => StatusCode::OK,
             StatusResponse::Round(_) => StatusCode::OK,
-            StatusResponse::Finished => StatusCode::OK,
+            StatusResponse::Finished(_) => StatusCode::OK,
             StatusResponse::Error(ref error) => match error {
                 StatusRequestError::GameNotFound(_) => StatusCode::NOT_FOUND,
                 StatusRequestError::AuthFailed(_) => StatusCode::UNAUTHORIZED,
