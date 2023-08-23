@@ -15,7 +15,7 @@ use crate::{
     round::turn::Turn,
     session::Session,
     ui::game::display_ui,
-    GameScreen,
+    GameEnded, GameScreen,
 };
 
 use self::{card::CardData, deck::Deck};
@@ -60,11 +60,12 @@ fn request_status(session: Res<Session>, mut commands: Commands) {
 fn on_status_response(
     session: Res<Session>,
     mut commands: Commands,
-    mut response: EventReader<OnResponse<StatusRequest>>,
     mut table: Query<&mut Table>,
     mut hand: Query<&mut Hand>,
     mut deck: Query<&mut Deck>,
     opponents: Query<(Entity, &mut Opponent)>,
+    mut response: EventReader<OnResponse<StatusRequest>>,
+    mut game_ended: EventWriter<GameEnded>,
 ) {
     let Some(OnResponse(status)) = response.iter().last() else {
         return;
@@ -93,7 +94,10 @@ fn on_status_response(
 
             update_opponent_list(commands, opponents, round);
         }
-        StatusResponse::Finished(_) => todo!(),
+        StatusResponse::Finished(status) => game_ended.send(GameEnded {
+            winner_id: status.winner,
+            winner_name: status.winner_name().to_string(),
+        }),
         StatusResponse::Error(_) => todo!(),
     }
 
