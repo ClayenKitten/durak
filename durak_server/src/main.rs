@@ -18,9 +18,9 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use game::GamePhase;
+use game::{finished::FinishedState, CardPlayedOutcome, GamePhase};
 use state::{Auth, Games};
-use std::net::SocketAddr;
+use std::{mem, net::SocketAddr};
 use tracing::{info, Level};
 
 use crate::state::AppState;
@@ -157,19 +157,34 @@ async fn play_card(
     Authenticate(player): Authenticate,
 ) -> impl IntoResponse {
     games
-        .with_started_game(player.game_id, |round| {
-            match round.play_card(player.player_id, card) {
-                Ok(_) => {
-                    info!(
-                        "card played by player #{} in game `{}`",
-                        player.player_id, player.game_id
-                    );
-                    StatusCode::OK
+        .with_game(player.game_id, |game| {
+            if let GamePhase::Round(round) = &mut game.phase {
+                match round.play_card(player.player_id, card) {
+                    Ok(CardPlayedOutcome::None) => {
+                        info!(
+                            "card played by player #{} in game `{}`",
+                            player.player_id, player.game_id
+                        );
+                        StatusCode::OK
+                    }
+                    Ok(CardPlayedOutcome::Win(winner)) => {
+                        info!(
+                            "card played by player #{} in game `{}` caused win",
+                            player.player_id, player.game_id
+                        );
+                        game.phase = GamePhase::Finished(FinishedState {
+                            winner,
+                            players: mem::take(&mut round.players),
+                        });
+                        StatusCode::OK
+                    }
+                    Err(_) => StatusCode::BAD_REQUEST,
                 }
-                Err(_) => StatusCode::BAD_REQUEST,
+            } else {
+                StatusCode::BAD_REQUEST
             }
         })
-        .unwrap_or(StatusCode::NOT_FOUND)
+        .unwrap_or(StatusCode::NOT_FOUND);
 }
 
 /// Takes all cards from the table into player's hand.
