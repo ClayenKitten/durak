@@ -20,7 +20,7 @@ use axum::{
 };
 use game::{finished::FinishedState, CardPlayedOutcome, GamePhase};
 use state::{Auth, Games};
-use std::{mem, net::SocketAddr};
+use std::{mem, net::SocketAddr, str::FromStr};
 use tracing::{info, Level};
 
 use crate::state::AppState;
@@ -41,7 +41,11 @@ async fn main() {
         .fallback(not_found)
         .with_state(AppState::new());
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
+    let addr = match std::env::var("DURAK_SERVER_ADDRESS") {
+        Ok(env) => SocketAddr::from_str(&env),
+        Err(_) => SocketAddr::from_str(env!("DURAK_SERVER_ADDRESS")),
+    }
+    .expect("failed to parse listening address");
     info!("listening on {}", addr);
 
     axum::Server::bind(&addr)
